@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockPeek — Live Market Widget for Chrome</title>
+<style>
+  :root {
+    --bg:      #060b14;
+    --surface: #0d1117;
+    --card:    #161b22;
+    --card2:   #1c2128;
+    --border:  rgba(255,255,255,0.08);
+    --text:    #e6edf3;
+    --text2:   #7d8590;
+    --text3:   #484f58;
+    --green:   #00d4aa;
+    --red:     #ff4757;
+    --blue:    #4285f4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 60px;
+    background: rgba(6,11,20,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo-icon {
+    width: 32px; height: 32px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .nav-logo-text { font-size: 16px; font-weight: 700; color: var(--text); }
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+  .nav-links a { color: var(--text2); text-decoration: none; font-size: 14px; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    padding: 8px 18px; background: var(--blue); color: #fff;
+    border-radius: 8px; font-size: 14px; font-weight: 600;
+    text-decoration: none; transition: opacity .2s; display: flex; align-items: center; gap: 7px;
+  }
+  .nav-cta:hover { opacity: 0.88; }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center;
+    padding: 100px 40px 60px;
+    position: relative; overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(0,212,170,0.07) 0%, transparent 65%),
+                radial-gradient(ellipse 50% 50% at 20% 80%, rgba(66,133,244,0.06) 0%, transparent 60%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.03;
+    background-image: linear-gradient(var(--text) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--text) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-inner { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.25);
+    color: var(--green); padding: 5px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 58px); font-weight: 800; line-height: 1.1;
+    letter-spacing: -1.5px; margin-bottom: 20px;
+  }
+  .hero h1 span { color: var(--green); }
+  .hero-sub {
+    font-size: 18px; color: var(--text2); line-height: 1.65;
+    max-width: 480px; margin-bottom: 36px;
+  }
+  .hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: #fff;
+    padding: 13px 24px; border-radius: 10px;
+    font-size: 15px; font-weight: 600; text-decoration: none;
+    transition: opacity .2s, transform .15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text2); font-size: 14px; text-decoration: none;
+    border: 1px solid var(--border); padding: 13px 20px; border-radius: 10px;
+    transition: all .2s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+  .hero-stats { display: flex; gap: 28px; margin-top: 40px; }
+  .hero-stat-val { font-size: 22px; font-weight: 800; color: var(--text); }
+  .hero-stat-lbl { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* ── Live Demo Widget ── */
+  .demo-wrap {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+    position: relative;
+  }
+  .demo-label {
+    font-size: 11px; color: var(--text3); text-align: center;
+    letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .demo-label::before, .demo-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* The actual demo widget */
+  .widget-demo {
+    position: relative; display: flex; flex-direction: column; align-items: flex-end;
+  }
+
+  .demo-pill {
+    display: flex; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; cursor: pointer; height: 40px;
+    overflow: hidden; white-space: nowrap;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.5);
+    transition: max-width .4s cubic-bezier(.34,1.3,.64,1), border-radius .28s, border-color .2s;
+    max-width: 40px;
+  }
+  .demo-pill:hover, .demo-pill.expanded { max-width: 280px; border-radius: 20px; border-color: rgba(255,255,255,0.18); }
+  .demo-face {
+    flex: 0 0 40px; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--green);
+    transition: flex .18s, width .18s, opacity .12s;
+  }
+  .demo-pill:hover .demo-face, .demo-pill.expanded .demo-face { flex:0 0 0; width:0; opacity:0; overflow:hidden; }
+  .demo-body {
+    display: flex; align-items: center; gap: 10px; padding: 0 14px 0 0;
+    opacity: 0; transition: opacity .2s .12s;
+  }
+  .demo-pill:hover .demo-body, .demo-pill.expanded .demo-body { opacity: 1; }
+  .demo-sym  { color: var(--text2); font-size: 10px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; }
+  .demo-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 7px rgba(0,212,170,.6); animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .demo-vals { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; margin-left: auto; }
+  .demo-price { color: var(--text); font-weight: 700; font-size: 13px; }
+  .demo-chg   { font-size: 11px; font-weight: 600; color: var(--green); }
+
+  /* Demo panel */
+  .demo-panel {
+    width: 480px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px;
+    overflow: hidden; box-shadow: 0 28px 72px rgba(0,0,0,.75);
+    margin-top: 10px;
+    animation: fadeUp .4s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .dp-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 14px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .dp-sym   { color: var(--text3); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .dp-price { color: var(--text); font-size: 26px; font-weight: 700; letter-spacing: -.8px; }
+  .dp-chg   { font-size: 13px; font-weight: 600; color: var(--green); margin-top: 3px; }
+  .dp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .dp-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; color: var(--green); background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); text-transform: uppercase; letter-spacing: .5px; }
+  .dp-upd   { color: var(--text3); font-size: 10px; }
+
+  .dp-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .dp-tab {
+    flex: 1; padding: 8px 4px; border: none; background: none;
+    color: var(--text3); font-size: 10px; font-weight: 700; letter-spacing: .3px;
+    text-transform: uppercase; cursor: pointer; border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .dp-tab:hover { color: var(--text2); }
+  .dp-tab.active { color: var(--text); border-bottom-color: var(--green); }
+
+  .dp-chart { position: relative; }
+  canvas.demo-cv { display: block; }
+
+  .dp-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px 10px;
+  }
+  .dp-ranges { display: flex; gap: 3px; }
+  .dp-rb {
+    padding: 4px 9px; border: none; border-radius: 5px;
+    background: rgba(255,255,255,.05); color: var(--text2);
+    font-size: 10px; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .dp-rb:hover { background: rgba(255,255,255,.1); color: var(--text); }
+  .dp-rb.active { color: var(--green); background: rgba(0,212,170,.12); }
+  .dp-copy { background:none; border:none; color:var(--text3); font-size:11px; cursor:pointer; padding:4px 8px; border-radius:5px; transition:all .15s; }
+  .dp-copy:hover { color:var(--text); background:rgba(255,255,255,.05); }
+
+  /* ── Sections ── */
+  section { padding: 100px 40px; }
+  .section-inner { max-width: 1200px; margin: 0 auto; }
+  .section-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--green); margin-bottom: 14px;
+  }
+  .section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -1px; margin-bottom: 14px; }
+  .section-sub   { font-size: 17px; color: var(--text2); max-width: 560px; line-height: 1.65; }
+
+  /* ── Features ── */
+  .features-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border); border-radius: 16px; overflow: hidden;
+    margin-top: 56px;
+  }
+  .feat-card {
+    background: var(--surface); padding: 28px 28px 32px;
+    transition: background .2s;
+  }
+  .feat-card:hover { background: var(--card); }
+  .feat-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(0,212,170,.1); border: 1px solid rgba(0,212,170,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  .feat-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .feat-desc  { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+  /* ── How it works ── */
+  .how-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 56px; }
+  .step {
+    padding: 36px 40px; border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .step:last-child { border-right: none; }
+  .step-num {
+    font-size: 60px; font-weight: 900; color: rgba(255,255,255,.05);
+    position: absolute; top: 24px; right: 28px; line-height: 1; letter-spacing: -3px;
+  }
+  .step-icon { font-size: 28px; margin-bottom: 16px; }
+  .step-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .step-desc  { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+  /* ── Tickers showcase ── */
+  .tickers-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-top: 40px; scrollbar-width: none; }
+  .tickers-scroll::-webkit-scrollbar { display: none; }
+  .ticker-pill {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 16px; min-width: 160px;
+    cursor: default; transition: border-color .2s;
+  }
+  .ticker-pill:hover { border-color: rgba(255,255,255,.15); }
+  .tp-dot  { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+  .tp-sym  { font-weight: 700; font-size: 13px; }
+  .tp-name { font-size: 11px; color: var(--text3); }
+  .tp-price { margin-left: auto; text-align: right; }
+  .tp-val  { font-size: 13px; font-weight: 700; }
+  .tp-chg  { font-size: 10px; font-weight: 600; }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+
+  /* ── Alerts showcase ── */
+  .alerts-showcase { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-top: 56px; }
+  .alert-mockup {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+  }
+  .am-head { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text3); }
+  .am-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .am-bullet { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+  .am-sym  { font-weight: 700; font-size: 13px; min-width: 75px; }
+  .am-desc { font-size: 12px; color: var(--text2); flex: 1; }
+  .am-del  { color: var(--text3); font-size: 16px; cursor: pointer; }
+
+  /* Toast mockup */
+  .toast-mockup {
+    background: #161b22; border: 1px solid rgba(255,255,255,.1);
+    border-left: 3px solid var(--green); border-radius: 10px;
+    padding: 14px 16px; margin-top: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    animation: slideIn 1s ease infinite alternate;
+  }
+  @keyframes slideIn { from{transform:translateX(10px);opacity:.7} to{transform:translateX(0);opacity:1} }
+  .toast-label { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+  .toast-sym   { font-size: 15px; font-weight: 700; }
+  .toast-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .toast-price { font-size: 14px; font-weight: 700; color: var(--green); margin-top: 6px; }
+
+  .alerts-copy h3 { font-size: 26px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 12px; }
+  .alerts-copy p  { color: var(--text2); line-height: 1.7; font-size: 15px; margin-bottom: 20px; }
+  .alerts-bullets { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .alerts-bullets li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text2); }
+  .alerts-bullets li::before { content:'✓'; color:var(--green); font-weight:700; font-size:13px; }
+
+  /* ── CTA ── */
+  .cta-section {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(0,212,170,.07) 0%, rgba(66,133,244,.05) 100%);
+    border-top: 1px solid var(--border);
+  }
+  .cta-section h2 { font-size: clamp(28px,4vw,46px); font-weight: 800; letter-spacing: -1px; margin-bottom: 16px; }
+  .cta-section p  { color: var(--text2); font-size: 17px; max-width: 500px; margin: 0 auto 36px; }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--blue); color: #fff;
+    padding: 16px 32px; border-radius: 12px;
+    font-size: 16px; font-weight: 700; text-decoration: none;
+    transition: opacity .2s, transform .15s; margin-bottom: 16px;
+  }
+  .cta-btn:hover { opacity: .88; transform: translateY(-2px); }
+  .cta-note { font-size: 13px; color: var(--text3); }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border); padding: 28px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-logo { display: flex; align-items: center; gap: 8px; }
+  .footer-logo-text { font-size: 15px; font-weight: 700; color: var(--text); }
+  .footer-note { font-size: 12px; color: var(--text3); }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { font-size: 12px; color: var(--text3); text-decoration: none; transition: color .2s; }
+  .footer-links a:hover { color: var(--text2); }
+
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .demo-panel { width: 100%; max-width: 480px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .step { border-right: none; border-bottom: 1px solid var(--border); }
+    .alerts-showcase { grid-template-columns: 1fr; }
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    section { padding: 60px 20px; }
+    .hero { padding: 80px 20px 40px; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">📊</div>
+    <span class="nav-logo-text">StockPeek</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#alerts">Alerts</a>
+  </div>
+  <a class="nav-cta" href="#">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l7 13H1L8 1z" fill="#fff" opacity=".4"/><circle cx="8" cy="8" r="4" fill="#fff"/></svg>
+    Add to Chrome
+  </a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">🟢 Live Market Data</div>
+      <h1>Peek at any stock,<br><span>instantly.</span></h1>
+      <p class="hero-sub">A floating circle that lives in your browser corner. Hover to expand a live chart for any stock, index, or crypto — without leaving the page.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="white" opacity=".2"/><path d="M5 9l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Add to Chrome — Free
+        </a>
+        <a class="btn-secondary" href="#how">See how it works →</a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-val">6+</div>
+          <div class="hero-stat-lbl">Time ranges</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">&lt;5s</div>
+          <div class="hero-stat-lbl">Alert delivery</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">0</div>
+          <div class="hero-stat-lbl">API keys needed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Demo -->
+    <div class="demo-wrap">
+      <div class="demo-label">Live demo — hover the circle</div>
+      <div class="widget-demo">
+        <div class="demo-pill expanded" id="demoPill">
+          <span class="demo-face">▲</span>
+          <div class="demo-body">
+            <span class="demo-sym">NIFTY 50</span>
+            <span class="demo-dot"></span>
+            <div class="demo-vals">
+              <span class="demo-price">24,576.25</span>
+              <span class="demo-chg">+0.84%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-panel">
+          <div class="dp-header">
+            <div>
+              <div class="dp-sym">^NSEI · NSE India</div>
+              <div class="dp-price">24,576.25</div>
+              <div class="dp-chg">+204.30 (+0.84%)</div>
+            </div>
+            <div class="dp-right">
+              <span class="dp-badge">Market Open</span>
+              <span class="dp-upd">Updated 09:47</span>
+            </div>
+          </div>
+
+          <div class="dp-tabs">
+            <button class="dp-tab active" onclick="switchDemoTab(this,'chart')">Chart</button>
+            <button class="dp-tab" onclick="switchDemoTab(this,'stats')">Stats</button>
+            <button class="dp-tab" onclick="switchDemoTab(this,'news')">News</button>
+            <button class="dp-tab" onclick="switchDemoTab(this,'alerts')">Alerts</button>
+          </div>
+
+          <div id="demo-chart" class="dp-chart">
+            <canvas class="demo-cv" id="demoCanvas" width="960" height="420" style="width:480px;height:210px"></canvas>
+            <div class="dp-footer">
+              <div class="dp-ranges">
+                <button class="dp-rb active" onclick="setDemoRange(this,'1D')">1D</button>
+                <button class="dp-rb" onclick="setDemoRange(this,'1W')">1W</button>
+                <button class="dp-rb" onclick="setDemoRange(this,'1M')">1M</button>
+                <button class="dp-rb" onclick="setDemoRange(this,'6M')">6M</button>
+                <button class="dp-rb" onclick="setDemoRange(this,'1Y')">1Y</button>
+                <button class="dp-rb" onclick="setDemoRange(this,'ALL')">All</button>
+              </div>
+              <button class="dp-copy">📋 Copy chart</button>
+            </div>
+          </div>
+
+          <div id="demo-stats" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.04);gap:1px">
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">52W High</div><div style="font-size:13px;font-weight:700">26,277.35</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">52W Low</div><div style="font-size:13px;font-weight:700">21,964.60</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Day High</div><div style="font-size:13px;font-weight:700">24,619.80</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Day Low</div><div style="font-size:13px;font-weight:700">24,328.50</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">P/E Ratio</div><div style="font-size:13px;font-weight:700">22.4</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Market Cap</div><div style="font-size:13px;font-weight:700">₹3.2 Cr</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Beta</div><div style="font-size:13px;font-weight:700">1.02</div></div>
+              <div style="background:#0d1117;padding:12px 14px"><div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Dividend Yield</div><div style="font-size:13px;font-weight:700">1.28%</div></div>
+            </div>
+            <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,.05)">
+              <div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">52-Week Range</div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#7d8590;margin-bottom:4px"><span>21,964</span><span>26,277</span></div>
+              <div style="height:3px;background:#1c2128;border-radius:2px;overflow:hidden"><div style="height:100%;width:58%;background:#00d4aa;border-radius:2px"></div></div>
+            </div>
+          </div>
+
+          <div id="demo-news" style="display:none">
+            <a style="display:block;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);text-decoration:none;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+              <div style="font-size:12px;color:#e6edf3;line-height:1.45;margin-bottom:4px">Sensex, Nifty 50 open higher as FII buying continues for third straight session</div>
+              <div style="font-size:10px;color:#484f58;display:flex;gap:10px"><span>Economic Times</span><span>12m ago</span></div>
+            </a>
+            <a style="display:block;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);text-decoration:none;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+              <div style="font-size:12px;color:#e6edf3;line-height:1.45;margin-bottom:4px">RBI holds rates steady; markets react positively to inflation data</div>
+              <div style="font-size:10px;color:#484f58;display:flex;gap:10px"><span>Moneycontrol</span><span>1h ago</span></div>
+            </a>
+            <a style="display:block;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);text-decoration:none;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+              <div style="font-size:12px;color:#e6edf3;line-height:1.45;margin-bottom:4px">Reliance Industries Q4 results beat estimates, stock surges 3.2%</div>
+              <div style="font-size:10px;color:#484f58;display:flex;gap:10px"><span>LiveMint</span><span>2h ago</span></div>
+            </a>
+            <a style="display:block;padding:11px 14px;text-decoration:none;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background='none'">
+              <div style="font-size:12px;color:#e6edf3;line-height:1.45;margin-bottom:4px">IT sector leads gains as dollar strengthens; TCS, Infosys up 2%</div>
+              <div style="font-size:10px;color:#484f58;display:flex;gap:10px"><span>NDTV Profit</span><span>3h ago</span></div>
+            </a>
+          </div>
+
+          <div id="demo-alerts" style="display:none">
+            <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#484f58;margin-bottom:8px">Set Price Alert</div>
+              <select style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e6edf3;border-radius:6px;padding:7px 10px;font-size:12px;outline:none;margin-bottom:6px">
+                <option>Price goes above →</option>
+                <option>Price goes below ←</option>
+              </select>
+              <div style="display:flex;gap:6px">
+                <input type="number" placeholder="Target price" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#e6edf3;border-radius:6px;padding:7px 10px;font-size:12px;outline:none" />
+                <button style="padding:7px 14px;background:#00d4aa;border:none;color:#0d1117;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer">Set</button>
+              </div>
+            </div>
+            <div style="padding:10px 14px;font-size:10px;color:#484f58">Active alerts for <strong style="color:#7d8590">^NSEI</strong></div>
+            <div style="padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04)">
+              <div style="width:7px;height:7px;border-radius:50%;background:#00d4aa;flex:0 0 auto"></div>
+              <div style="font-weight:700;font-size:12px;min-width:65px">^NSEI</div>
+              <div style="font-size:11px;color:#7d8590;flex:1">≥ 25,000.00</div>
+              <div style="color:#484f58;font-size:16px;cursor:pointer">×</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tickers -->
+<section style="padding:40px 40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)">
+  <div class="section-inner">
+    <p style="font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:16px">Works with any Yahoo Finance symbol</p>
+    <div class="tickers-scroll">
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">^NSEI</div><div class="tp-name">Nifty 50</div></div><div class="tp-price"><div class="tp-val up">24,576</div><div class="tp-chg up">+0.84%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">^BSESN</div><div class="tp-name">Sensex</div></div><div class="tp-price"><div class="tp-val up">81,147</div><div class="tp-chg up">+0.79%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">AAPL</div><div class="tp-name">Apple Inc.</div></div><div class="tp-price"><div class="tp-val up">213.50</div><div class="tp-chg up">+1.2%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#ff4757"></div><div><div class="tp-sym">^GSPC</div><div class="tp-name">S&P 500</div></div><div class="tp-price"><div class="tp-val down">5,282</div><div class="tp-chg down">-0.31%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">BTC-USD</div><div class="tp-name">Bitcoin</div></div><div class="tp-price"><div class="tp-val up">94,201</div><div class="tp-chg up">+2.1%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">RELIANCE.NS</div><div class="tp-name">Reliance</div></div><div class="tp-price"><div class="tp-val up">2,987</div><div class="tp-chg up">+1.5%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#ff4757"></div><div><div class="tp-sym">GLD</div><div class="tp-name">Gold ETF</div></div><div class="tp-price"><div class="tp-val down">236.10</div><div class="tp-chg down">-0.4%</div></div></div>
+      <div class="ticker-pill"><div class="tp-dot" style="background:#00d4aa"></div><div><div class="tp-sym">ETH-USD</div><div class="tp-name">Ethereum</div></div><div class="tp-price"><div class="tp-val up">3,142</div><div class="tp-chg up">+3.2%</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Everything a trader needs,<br>right in the corner.</h2>
+    <p class="section-sub">StockPeek packs a full trading terminal into a tiny widget that never gets in your way.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Live Charts</div>
+        <div class="feat-desc">Interactive canvas charts with volume bars, previous close line, and OHLC tooltip. 1D · 1W · 1M · 6M · 1Y · All time ranges.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-title">Any Ticker</div>
+        <div class="feat-desc">Search any Yahoo Finance symbol — Indian stocks, US equities, crypto, ETFs, indices, mutual funds. Autocomplete with type badges.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔔</div>
+        <div class="feat-title">Price Alerts</div>
+        <div class="feat-desc">Set above/below price targets. Fetched <strong>directly</strong> from Yahoo Finance every 5 seconds — no service worker delay. Toast fires in under 5 seconds.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <div class="feat-title">Stats & News</div>
+        <div class="feat-desc">52-week range, P/E, market cap, beta, dividend yield. Plus 6 latest headlines from Yahoo Finance, updated on demand.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔄</div>
+        <div class="feat-title">Always Fresh</div>
+        <div class="feat-desc">Chart auto-refreshes every 30 seconds. Also refreshes instantly when you hover if data is older than 30s — so you always see the latest price.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌓</div>
+        <div class="feat-title">Light & Dark Theme</div>
+        <div class="feat-desc">Toggle between dark and light themes with one click. Chart labels, grid, and tooltips all adapt — no white-on-white surprises.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section id="how" class="how-section">
+  <div class="section-inner">
+    <div class="section-tag">How it works</div>
+    <h2 class="section-title">Up in 30 seconds.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-icon">🧩</div>
+        <div class="step-title">Install the extension</div>
+        <div class="step-desc">Add StockPeek from the Chrome Web Store. No account, no API key, no setup. Visit any webpage and the circle appears instantly.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-icon">🖱</div>
+        <div class="step-title">Hover to expand</div>
+        <div class="step-desc">Move your cursor over the circle. It springs open to show the live price, % change, and a full interactive chart with tabs.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-icon">📉</div>
+        <div class="step-title">Peek, don't switch tabs</div>
+        <div class="step-desc">Move away and it collapses. After 3 seconds it drifts to the corner. Drag it wherever you want — it stays there.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Alerts -->
+<section id="alerts">
+  <div class="section-inner">
+    <div class="alerts-showcase">
+      <div>
+        <div class="alert-mockup">
+          <div class="am-head">Active Alerts</div>
+          <div class="am-item"><div class="am-bullet" style="background:#00d4aa"></div><div class="am-sym">^NSEI</div><div class="am-desc">≥ 25,000.00</div><div class="am-del">×</div></div>
+          <div class="am-item"><div class="am-bullet" style="background:#ff4757"></div><div class="am-sym">AAPL</div><div class="am-desc">≤ 200.00</div><div class="am-del">×</div></div>
+          <div class="am-item"><div class="am-bullet" style="background:#00d4aa"></div><div class="am-sym">BTC-USD</div><div class="am-desc">≥ 100,000</div><div class="am-del">×</div></div>
+        </div>
+        <div class="toast-mockup">
+          <div class="toast-label">🔔 Price Alert</div>
+          <div class="toast-sym">^NSEI</div>
+          <div class="toast-sub">Went above 25,000.00</div>
+          <div class="toast-price">Now at 25,024.55</div>
+        </div>
+      </div>
+      <div class="alerts-copy">
+        <div class="section-tag">Price Alerts</div>
+        <h3>Know the moment it moves.</h3>
+        <p>Set a target price and StockPeek fetches the price <strong>directly</strong> from Yahoo Finance every 5 seconds — no service worker, no delays. When the price crosses your target, a sleek toast notification slides in on the page you're reading, in under 5 seconds.</p>
+        <ul class="alerts-bullets">
+          <li>Above or below any price target</li>
+          <li>Direct fetch — bypasses service worker entirely</li>
+          <li>Under 5 second delivery, consistently</li>
+          <li>In-page toast — no Chrome permissions needed</li>
+          <li>Alert auto-clears once triggered</li>
+          <li>Background fallback via chrome.alarms for other tickers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="section-inner">
+    <h2>Ready to peek?</h2>
+    <p>Free forever. No account. No API key. Works on every website.</p>
+    <div>
+      <a class="cta-btn" href="#">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="white" opacity=".25"/><path d="M6 10l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Add to Chrome — It's Free
+      </a>
+      <div class="cta-note">Chrome · Manifest V3 · No sign-up required</div>
+      <div style="margin-top:24px">
+        <p style="font-size:13px;color:var(--text3);margin-bottom:10px">If StockPeek saves you time, consider supporting 🙏</p>
+        <a href='https://ko-fi.com/H2H71YLZOY' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">
+    <span style="font-size:18px">📊</span>
+    <span class="footer-logo-text">StockPeek</span>
+  </div>
+  <span class="footer-note">Data via Yahoo Finance · Prices delayed ~15 min outside market hours · Not financial advice</span>
+  <a href='https://ko-fi.com/H2H71YLZOY' target='_blank'><img height='28' style='border:0px;height:28px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Source</a>
+    <a href="#">Support</a>
+  </div>
+</footer>
+
+<script>
+// ── Demo chart ────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('demoCanvas');
+const ctx    = canvas.getContext('2d');
+const W = 480, H = 210, DPR = window.devicePixelRatio || 1;
+canvas.width  = W * DPR; canvas.height = H * DPR;
+canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+ctx.scale(DPR, DPR);
+
+const PAD = { t:10, r:12, b:32, l:64 };
+
+function generateData(points, base, volatility, drift) {
+  const data = []; let price = base;
+  for (let i = 0; i < points; i++) {
+    price += (Math.random() - (0.5 - drift)) * volatility;
+    price = Math.max(base * 0.85, Math.min(base * 1.15, price));
+    data.push(Math.round(price * 100) / 100);
+  }
+  return data;
+}
+
+const DATA_SETS = {
+  '1D':  generateData(78,  24372, 30,  0.02),
+  '1W':  generateData(35,  24100, 60,  0.03),
+  '1M':  generateData(22,  23800, 90,  0.04),
+  '6M':  generateData(130, 23000, 80,  0.05),
+  '1Y':  generateData(250, 22000, 100, 0.06),
+  'ALL': generateData(180, 18000, 150, 0.08),
+};
+
+let currentRange = '1D';
+
+function drawChart(range) {
+  const data   = DATA_SETS[range];
+  const aw = W - PAD.l - PAD.r, ah = H - PAD.t - PAD.b;
+  const pMin = Math.min(...data), pMax = Math.max(...data);
+  const spread = pMax - pMin || pMax * 0.01;
+  const lo = pMin - spread * 0.1, hi = pMax + spread * 0.1;
+  const isUp = data[data.length - 1] >= data[0];
+  const color   = isUp ? '#00d4aa' : '#ff4757';
+  const colorRa = isUp ? '0,212,170' : '255,71,87';
+
+  const xOf = i     => PAD.l + (i / (data.length - 1)) * aw;
+  const yOf = price => PAD.t + ah * (1 - (price - lo) / (hi - lo));
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.t + ah * (i / 4);
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + aw, y); ctx.stroke();
+  }
+
+  // Y labels
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.font = '10px -apple-system,system-ui,sans-serif'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const val = hi - (hi - lo) * (i / 4);
+    ctx.fillText(val.toLocaleString('en-IN', {minimumFractionDigits:0,maximumFractionDigits:0}), PAD.l - 6, PAD.t + ah * (i / 4) + 3.5);
+  }
+
+  // Area
+  const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + ah);
+  grad.addColorStop(0, `rgba(${colorRa},0.22)`);
+  grad.addColorStop(1, `rgba(${colorRa},0)`);
+  ctx.beginPath();
+  data.forEach((p, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(p)) : ctx.lineTo(xOf(i), yOf(p)); });
+  ctx.lineTo(xOf(data.length - 1), PAD.t + ah);
+  ctx.lineTo(xOf(0), PAD.t + ah);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  data.forEach((p, i) => { i === 0 ? ctx.moveTo(xOf(i), yOf(p)) : ctx.lineTo(xOf(i), yOf(p)); });
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+
+  // X labels
+  ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.textAlign = 'center';
+  ctx.font = '10px -apple-system,system-ui,sans-serif';
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
+    const i = Math.round(t * (data.length - 1));
+    ctx.fillText(getLabel(i, data.length, range), xOf(i), PAD.t + ah + 20);
+  });
+}
+
+function getLabel(i, total, range) {
+  const labels = {
+    '1D':  ['09:15','10:45','12:15','13:45','15:30'],
+    '1W':  ['Mon','Tue','Wed','Thu','Fri'],
+    '1M':  ['1 Apr','8 Apr','15 Apr','22 Apr','28 Apr'],
+    '6M':  ['Nov','Dec','Jan','Feb','Mar'],
+    '1Y':  ['May','Jul','Sep','Nov','Jan'],
+    'ALL': ['2020','2021','2022','2023','2024'],
+  };
+  const arr = labels[range] || labels['1D'];
+  const idx = Math.round((i / (total - 1)) * (arr.length - 1));
+  return arr[Math.min(idx, arr.length - 1)];
+}
+
+// Tab switching
+function switchDemoTab(btn, tab) {
+  document.querySelectorAll('.dp-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['chart','stats','news','alerts'].forEach(t => {
+    document.getElementById('demo-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'chart') drawChart(currentRange);
+}
+
+function setDemoRange(btn, range) {
+  document.querySelectorAll('.dp-rb').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = range;
+  drawChart(range);
+}
+
+// Interactive pill on mobile/click
+const pill = document.getElementById('demoPill');
+pill.addEventListener('click', () => pill.classList.toggle('expanded'));
+
+// Initial draw
+drawChart('1D');
+</script>
+</body>
+</html>

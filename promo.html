@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StockPeek — Promo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1280px; height: 720px; overflow: hidden;
+    background: #060b14;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #e6edf3;
+    cursor: none;
+  }
+
+  /* ── Scene container ── */
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; }
+  .scene { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+  .scene.active { opacity: 1; }
+
+  /* ── Background ── */
+  .bg-dark  { background: #060b14; }
+  .bg-grid  {
+    background: #060b14;
+    background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .bg-glow-green { background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,212,170,.12) 0%, #060b14 65%); }
+  .bg-glow-blue  { background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(66,133,244,.1) 0%, #060b14 65%); }
+
+  /* ── Typography ── */
+  .tag {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: #00d4aa;
+    background: rgba(0,212,170,.1); border: 1px solid rgba(0,212,170,.25);
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 20px;
+  }
+  h1 { font-size: 72px; font-weight: 900; letter-spacing: -3px; line-height: 1.05; }
+  h2 { font-size: 52px; font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+  h3 { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+  .sub { font-size: 20px; color: #7d8590; line-height: 1.6; margin-top: 16px; max-width: 600px; }
+  .green { color: #00d4aa; }
+  .muted { color: #7d8590; }
+
+  /* ── Centering helpers ── */
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; }
+  .left   { display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0 120px; }
+  .split  { display: grid; grid-template-columns: 1fr 1fr; height: 100%; align-items: center; padding: 0 80px; gap: 60px; }
+
+  /* ── Animated text ── */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.in { opacity: 1; transform: translateY(0); }
+  .delay1 { transition-delay: .1s; }
+  .delay2 { transition-delay: .25s; }
+  .delay3 { transition-delay: .4s; }
+  .delay4 { transition-delay: .6s; }
+
+  /* ── Widget mockup ── */
+  .widget-wrap { position: relative; display: flex; flex-direction: column; align-items: flex-end; }
+
+  .pill {
+    display: flex; align-items: center;
+    background: #161b22; border: 1px solid rgba(255,255,255,.12);
+    border-radius: 50%; height: 44px; overflow: hidden; white-space: nowrap;
+    box-shadow: 0 6px 28px rgba(0,0,0,.6);
+    transition: max-width .5s cubic-bezier(.34,1.3,.64,1), border-radius .35s;
+    max-width: 44px;
+  }
+  .pill.open { max-width: 320px; border-radius: 22px; border-color: rgba(255,255,255,.2); }
+  .pill-face {
+    flex: 0 0 44px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #00d4aa;
+    transition: flex .2s, width .2s, opacity .15s;
+  }
+  .pill.open .pill-face { flex:0 0 0; width:0; opacity:0; overflow:hidden; }
+  .pill-body {
+    display: flex; align-items: center; gap: 10px; padding: 0 14px 0 0;
+    opacity: 0; transition: opacity .2s .15s;
+  }
+  .pill.open .pill-body { opacity: 1; }
+  .pill-sym  { color: #7d8590; font-size: 11px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; }
+  .pill-dot  { width: 7px; height: 7px; border-radius: 50%; background: #00d4aa; box-shadow: 0 0 6px rgba(0,212,170,.6); animation: blink 2s ease-in-out infinite; }
+  .pill-vals { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; }
+  .pill-price { color: #e6edf3; font-weight: 700; font-size: 14px; }
+  .pill-chg   { font-size: 11px; font-weight: 600; color: #00d4aa; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .panel {
+    width: 500px; background: #0d1117; border: 1px solid rgba(255,255,255,.09);
+    border-radius: 16px; overflow: hidden; box-shadow: 0 28px 72px rgba(0,0,0,.8);
+    margin-top: 10px;
+    opacity: 0; transform: translateY(10px) scale(.97);
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .panel.open { opacity: 1; transform: translateY(0) scale(1); }
+
+  .ph { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .ph-sym   { color: #484f58; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .ph-price { color: #e6edf3; font-size: 26px; font-weight: 700; letter-spacing: -.8px; }
+  .ph-chg   { font-size: 13px; font-weight: 600; color: #00d4aa; margin-top: 3px; }
+  .ph-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; color: #00d4aa; background: rgba(0,212,170,.12); border: 1px solid rgba(0,212,170,.25); }
+  .upd { font-size: 10px; color: #30363d; }
+
+  .tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .tab-btn { flex:1; padding:8px 4px; border:none; background:none; color:#484f58; font-size:10px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; cursor:default; border-bottom:2px solid transparent; }
+  .tab-btn.active { color:#e6edf3; border-bottom-color:#00d4aa; }
+
+  /* chart */
+  .chart-area { position: relative; }
+  canvas.chart-cv { display: block; }
+  .chart-foot { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 10px; }
+  .ranges { display: flex; gap: 3px; }
+  .rb { padding:4px 9px; border:none; border-radius:5px; background:rgba(255,255,255,.05); color:#7d8590; font-size:10px; font-weight:600; cursor:default; }
+  .rb.active { color:#00d4aa; background:rgba(0,212,170,.12); }
+  .copy-btn { background:none; border:none; color:#484f58; font-size:10px; cursor:default; }
+
+  /* stats */
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; background:rgba(255,255,255,.04); gap:1px; }
+  .stat-cell { background:#0d1117; padding:11px 14px; }
+  .stat-lbl { color:#484f58; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px; }
+  .stat-val { color:#e6edf3; font-size:13px; font-weight:700; }
+  .stat-bar { height:3px; background:#1c2128; border-radius:2px; margin-top:5px; overflow:hidden; }
+  .stat-bar-fill { height:100%; background:#00d4aa; border-radius:2px; width:0; transition:width 1.2s ease; }
+
+  /* news */
+  .news-item { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .news-title { color:#c9d1d9; font-size:12px; line-height:1.45; }
+  .news-meta  { color:#484f58; font-size:10px; margin-top:4px; }
+
+  /* search overlay */
+  .search-overlay {
+    position:absolute; inset:0; background:#0d1117; z-index:10;
+    display:flex; flex-direction:column;
+    opacity:0; transition:opacity .25s;
+  }
+  .search-overlay.visible { opacity:1; }
+  .search-bar { display:flex; align-items:center; gap:8px; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .search-input { flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(0,212,170,.4); color:#e6edf3; border-radius:8px; padding:7px 11px; font-size:13px; outline:none; font-family:inherit; }
+  .sr-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .sr-sym  { color:#e6edf3; font-weight:700; font-size:13px; min-width:80px; }
+  .sr-name { color:#7d8590; font-size:12px; flex:1; }
+  .sr-tag  { font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; text-transform:uppercase; }
+  .sr-tag.eq { color:#58a6ff; background:rgba(88,166,255,.1); }
+  .sr-tag.idx { color:#00d4aa; background:rgba(0,212,170,.1); }
+  .sr-tag.cry { color:#f0883e; background:rgba(240,136,62,.1); }
+  .sr-item.highlight { background:rgba(0,212,170,.08); }
+
+  /* alert tab */
+  .alert-form { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .af-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#484f58; margin-bottom:7px; }
+  .af-sel { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#e6edf3; border-radius:6px; padding:6px 10px; font-size:12px; margin-bottom:5px; }
+  .af-row { display:flex; gap:5px; }
+  .af-inp { flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#e6edf3; border-radius:6px; padding:6px 10px; font-size:12px; font-family:inherit; }
+  .af-btn { padding:6px 12px; background:#00d4aa; border:none; color:#0d1117; border-radius:6px; font-weight:700; font-size:11px; }
+  .alert-active { display:flex; align-items:center; gap:8px; padding:9px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .alert-dot { width:7px; height:7px; border-radius:50%; background:#00d4aa; flex:0 0 auto; }
+  .alert-sym { font-weight:700; font-size:12px; min-width:60px; }
+  .alert-desc { font-size:11px; color:#7d8590; }
+
+  /* toast */
+  .toast {
+    position: fixed; top: 24px; right: 24px; z-index: 999;
+    background: #161b22; border: 1px solid rgba(255,255,255,.1);
+    border-left: 3px solid #00d4aa; border-radius: 10px;
+    padding: 14px 16px; min-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.6);
+    transform: translateX(120%); transition: transform .4s cubic-bezier(.34,1.3,.64,1);
+  }
+  .toast.show { transform: translateX(0); }
+  .toast-lbl   { font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#7d8590; margin-bottom:4px; }
+  .toast-sym   { font-size:15px; font-weight:700; }
+  .toast-sub   { font-size:12px; color:#7d8590; margin-top:2px; }
+  .toast-price { font-size:14px; font-weight:700; color:#00d4aa; margin-top:6px; }
+
+  /* callout label */
+  .callout {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,17,23,.9); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 30px; padding: 10px 24px;
+    font-size: 16px; font-weight: 600; color: #e6edf3;
+    white-space: nowrap; backdrop-filter: blur(8px);
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .callout.show { opacity: 1; }
+
+  /* browser chrome */
+  .browser {
+    width: 560px; background: #1c2128; border-radius: 12px;
+    box-shadow: 0 32px 80px rgba(0,0,0,.7); overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .browser-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    background: #161b22; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .browser-dot { width:10px; height:10px; border-radius:50%; }
+  .browser-url {
+    flex:1; background:rgba(255,255,255,.05); border-radius:6px;
+    padding:5px 12px; font-size:12px; color:#7d8590; margin-left:8px;
+  }
+  .browser-body { height: 380px; background: #fff; position: relative; overflow: hidden; }
+  .browser-content { padding: 32px; color: #1f2328; }
+  .browser-content h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .browser-content p  { font-size: 14px; color: #57606a; line-height: 1.6; }
+
+  /* floating widget in browser */
+  .browser-widget {
+    position: absolute; bottom: 16px; right: 16px;
+    display: flex; flex-direction: column; align-items: flex-end;
+  }
+  .bw-pill {
+    display:flex; align-items:center; background:#161b22;
+    border:1px solid rgba(255,255,255,.12); border-radius:50%;
+    height:36px; overflow:hidden; white-space:nowrap;
+    max-width:36px; transition: max-width .5s cubic-bezier(.34,1.3,.64,1), border-radius .3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  }
+  .bw-pill.open { max-width:230px; border-radius:18px; }
+  .bw-face { flex:0 0 36px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#00d4aa; transition:flex .18s,width .18s,opacity .12s; }
+  .bw-pill.open .bw-face { flex:0 0 0;width:0;opacity:0;overflow:hidden; }
+  .bw-body { display:flex; align-items:center; gap:8px; padding:0 12px 0 0; opacity:0; transition:opacity .2s .12s; }
+  .bw-pill.open .bw-body { opacity:1; }
+  .bw-sym { color:#7d8590; font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; }
+  .bw-dot { width:6px; height:6px; border-radius:50%; background:#00d4aa; }
+  .bw-price { color:#e6edf3; font-weight:700; font-size:12px; margin-left:auto; }
+
+  .bw-panel {
+    width:300px; background:#0d1117; border:1px solid rgba(255,255,255,.09);
+    border-radius:12px; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,.8);
+    margin-top:6px; opacity:0; transform:translateY(8px) scale(.97);
+    transition:opacity .25s,transform .25s;
+  }
+  .bw-panel.open { opacity:1; transform:translateY(0) scale(1); }
+  .bw-panel canvas { display:block; }
+
+  /* feature highlight chips */
+  .chip {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(0,212,170,.1); border:1px solid rgba(0,212,170,.25);
+    color:#00d4aa; padding:6px 14px; border-radius:20px;
+    font-size:13px; font-weight:600; margin:4px;
+    opacity:0; transform:translateY(10px);
+    transition:opacity .4s ease,transform .4s ease;
+  }
+  .chip.in { opacity:1; transform:translateY(0); }
+
+  /* theme demo */
+  .theme-toggle-demo {
+    width:44px; height:24px; background:#00d4aa; border-radius:12px;
+    position:relative; cursor:default; transition:background .4s;
+  }
+  .theme-toggle-demo.dark { background:rgba(255,255,255,.15); }
+  .theme-toggle-demo::after {
+    content:''; position:absolute; width:18px; height:18px;
+    background:#fff; border-radius:50%; top:3px;
+    transition:left .4s ease;
+  }
+  .theme-toggle-demo.dark::after { left:3px; }
+  .theme-toggle-demo::after { left:23px; }
+
+  /* progress bar */
+  .progress-bar {
+    position: fixed; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, #00d4aa, #4285f4);
+    width: 0; transition: width linear;
+    z-index: 1000;
+  }
+
+  /* restart button */
+  .restart {
+    position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+    background: rgba(22,27,34,.9); border:1px solid rgba(255,255,255,.15);
+    color:#7d8590; padding:8px 16px; border-radius:8px;
+    font-size:12px; cursor:pointer; backdrop-filter:blur(8px);
+    transition:all .2s; font-family:inherit;
+  }
+  .restart:hover { color:#e6edf3; border-color:rgba(255,255,255,.25); }
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- ── Scene 1: Intro ── -->
+  <div class="scene bg-glow-green" id="s1">
+    <div class="center">
+      <div class="fade-up" id="s1-tag"><div class="tag">Introducing</div></div>
+      <div class="fade-up delay1" id="s1-title"><h1><span class="green">Stock</span>Peek</h1></div>
+      <div class="fade-up delay2" id="s1-sub"><p class="sub">The smartest way to peek at markets —<br>right from your browser corner.</p></div>
+    </div>
+  </div>
+
+  <!-- ── Scene 2: Widget appears ── -->
+  <div class="scene bg-grid" id="s2">
+    <div class="split">
+      <div>
+        <div class="fade-up" id="s2-t"><h2>Always in<br>your corner.</h2></div>
+        <div class="fade-up delay2" id="s2-s"><p class="sub">A tiny circle that lives in the corner of every webpage. Green ▲ or red ▼ tells you the market direction at a glance.</p></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center">
+        <div class="browser">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#ffbd2e"></div>
+            <div class="browser-dot" style="background:#28ca42"></div>
+            <div class="browser-url">news.google.com</div>
+          </div>
+          <div class="browser-body">
+            <div class="browser-content">
+              <h2>Today's Headlines</h2>
+              <p>Markets open higher as global sentiment improves following positive economic data from major economies...</p>
+              <p style="margin-top:12px">RBI policy update expected to boost market confidence in Q2 results season...</p>
+            </div>
+            <div class="browser-widget">
+              <div class="bw-pill" id="bw-pill">
+                <span class="bw-face">▲</span>
+                <div class="bw-body">
+                  <span class="bw-sym">NIFTY</span>
+                  <span class="bw-dot"></span>
+                  <span class="bw-price">24,576</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scene 3: Hover expand + chart ── -->
+  <div class="scene bg-dark" id="s3" style="background:#060b14">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;gap:80px;padding:0 80px">
+      <div style="flex:1">
+        <div class="fade-up" id="s3-t"><h2>Hover.<br><span class="green">Peek.</span><br>Move on.</h2></div>
+        <div class="fade-up delay2" id="s3-s"><p class="sub">Full live chart with volume bars, OHLC data, and 6 time ranges — without leaving your page.</p></div>
+      </div>
+      <div style="flex:0 0 auto">
+        <div class="widget-wrap">
+          <div class="pill" id="main-pill">
+            <span class="pill-face">▲</span>
+            <div class="pill-body">
+              <span class="pill-sym">NIFTY 50</span>
+              <span class="pill-dot"></span>
+              <div class="pill-vals">
+                <span class="pill-price">24,576.25</span>
+                <span class="pill-chg">+0.84%</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel" id="main-panel">
+            <div class="ph">
+              <div>
+                <div class="ph-sym">^NSEI · NSE India</div>
+                <div class="ph-price">24,576.25</div>
+                <div class="ph-chg">+204.30 (+0.84%)</div>
+              </div>
+              <div class="ph-right">
+                <span class="badge">Market Open</span>
+                <span class="upd">Updated 10:32</span>
+              </div>
+            </div>
+            <div class="tabs">
+              <button class="tab-btn active">Chart</button>
+              <button class="tab-btn">Stats</button>
+              <button class="tab-btn">News</button>
+              <button class="tab-btn">Alerts</button>
+            </div>
+            <div class="chart-area">
+              <canvas id="main-chart" width="1000" height="440" style="width:500px;height:220px"></canvas>
+            </div>
+            <div class="chart-foot">
+              <div class="ranges">
+                <div class="rb active">1D</div>
+                <div class="rb">1W</div>
+                <div class="rb">1M</div>
+                <div class="rb">6M</div>
+                <div class="rb">1Y</div>
+                <div class="rb">All</div>
+              </div>
+              <div class="copy-btn">📋 Copy chart</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout" id="s3-callout">Interactive chart — hover crosshair shows OHLC data</div>
+  </div>
+
+  <!-- ── Scene 4: Any ticker ── -->
+  <div class="scene bg-dark" id="s4">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;gap:80px;padding:0 80px">
+      <div style="flex:1">
+        <div class="fade-up" id="s4-t"><h2>Any stock.<br>Any market.<br><span class="green">Anywhere.</span></h2></div>
+        <div class="fade-up delay2" id="s4-s"><p class="sub">Search any Yahoo Finance symbol — Indian stocks, US equities, crypto, ETFs, indices. Autocomplete with type badges.</p></div>
+        <div style="margin-top:24px;display:flex;flex-wrap:wrap">
+          <span class="chip" id="ch1">^NSEI · Nifty 50</span>
+          <span class="chip" id="ch2">AAPL · Apple</span>
+          <span class="chip" id="ch3">BTC-USD · Bitcoin</span>
+          <span class="chip" id="ch4">RELIANCE.NS</span>
+          <span class="chip" id="ch5">^GSPC · S&P 500</span>
+          <span class="chip" id="ch6">ETH-USD · Ethereum</span>
+        </div>
+      </div>
+      <div style="flex:0 0 500px;position:relative">
+        <div class="panel" style="opacity:1;transform:none;width:500px">
+          <div class="ph">
+            <div>
+              <div class="ph-sym">^NSEI · NSE India</div>
+              <div class="ph-price">24,576.25</div>
+              <div class="ph-chg">+204.30 (+0.84%)</div>
+            </div>
+            <div class="ph-right">
+              <span class="badge">Market Open</span>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn active">Chart</button>
+            <button class="tab-btn">Stats</button>
+            <button class="tab-btn">News</button>
+            <button class="tab-btn">Alerts</button>
+          </div>
+          <div style="height:270px;position:relative">
+            <canvas id="chart2" width="1000" height="440" style="width:500px;height:220px;display:block"></canvas>
+            <div class="chart-foot" style="padding:4px 12px 8px">
+              <div class="ranges">
+                <div class="rb active">1D</div>
+                <div class="rb">1W</div><div class="rb">1M</div>
+                <div class="rb">6M</div><div class="rb">1Y</div><div class="rb">All</div>
+              </div>
+            </div>
+          </div>
+          <div class="search-overlay" id="search-ov">
+            <div class="search-bar">
+              <span style="color:#484f58;font-size:14px">⌕</span>
+              <input class="search-input" id="search-typed" value="" readonly placeholder="Search stocks, indices, crypto…" />
+            </div>
+            <div id="search-res"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scene 5: Stats & News ── -->
+  <div class="scene bg-dark" id="s5">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;gap:80px;padding:0 80px">
+      <div style="flex:1">
+        <div class="fade-up" id="s5-t"><h2>Stats.<br>News.<br><span class="green">Everything.</span></h2></div>
+        <div class="fade-up delay2" id="s5-s"><p class="sub">Key statistics, 52-week range, P/E ratio, market cap — plus 6 latest headlines. All inside the widget.</p></div>
+      </div>
+      <div style="flex:0 0 500px">
+        <div class="panel" id="stats-panel" style="opacity:1;transform:none;width:500px">
+          <div class="ph">
+            <div><div class="ph-sym">^NSEI · NSE India</div><div class="ph-price">24,576.25</div></div>
+            <div class="ph-right"><span class="badge">Market Open</span></div>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn" id="tab-chart-s5">Chart</button>
+            <button class="tab-btn active" id="tab-stats-s5">Stats</button>
+            <button class="tab-btn" id="tab-news-s5">News</button>
+            <button class="tab-btn">Alerts</button>
+          </div>
+          <div id="stats-content" style="display:block">
+            <div class="stats-grid">
+              <div class="stat-cell"><div class="stat-lbl">52W High</div><div class="stat-val">26,277</div></div>
+              <div class="stat-cell"><div class="stat-lbl">52W Low</div><div class="stat-val">21,964</div></div>
+              <div class="stat-cell"><div class="stat-lbl">Day High</div><div class="stat-val">24,619</div></div>
+              <div class="stat-cell"><div class="stat-lbl">Day Low</div><div class="stat-val">24,328</div></div>
+              <div class="stat-cell"><div class="stat-lbl">P/E Ratio</div><div class="stat-val">22.4</div></div>
+              <div class="stat-cell"><div class="stat-lbl">Market Cap</div><div class="stat-val">₹3.2Cr</div></div>
+              <div class="stat-cell"><div class="stat-lbl">Beta</div><div class="stat-val">1.02</div></div>
+              <div class="stat-cell"><div class="stat-lbl">Dividend</div><div class="stat-val">1.28%</div></div>
+            </div>
+            <div style="padding:10px 14px">
+              <div style="font-size:9px;color:#484f58;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">52-Week Range</div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#7d8590;margin-bottom:4px"><span>21,964</span><span>26,277</span></div>
+              <div class="stat-bar"><div class="stat-bar-fill" id="range-bar" style="width:58%"></div></div>
+            </div>
+          </div>
+          <div id="news-content" style="display:none">
+            <div class="news-item"><div class="news-title">Sensex, Nifty open higher as FII buying continues third session</div><div class="news-meta">Economic Times · 12m ago</div></div>
+            <div class="news-item"><div class="news-title">RBI holds rates; markets react positively to inflation data</div><div class="news-meta">Moneycontrol · 1h ago</div></div>
+            <div class="news-item"><div class="news-title">Reliance Q4 results beat estimates, stock surges 3.2%</div><div class="news-meta">LiveMint · 2h ago</div></div>
+            <div class="news-item"><div class="news-title">IT sector leads gains as dollar strengthens; TCS up 2%</div><div class="news-meta">NDTV Profit · 3h ago</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scene 6: Alerts ── -->
+  <div class="scene bg-dark" id="s6">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;gap:80px;padding:0 80px">
+      <div style="flex:1">
+        <div class="fade-up" id="s6-t"><h2>Price alerts<br>in <span class="green">&lt;5 seconds.</span></h2></div>
+        <div class="fade-up delay2" id="s6-s"><p class="sub">Direct fetch from Yahoo Finance every 5 seconds — no delays, no service worker. Toast fires the moment price crosses your target.</p></div>
+        <div style="margin-top:28px" class="fade-up delay3" id="s6-chips">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);border-radius:10px;padding:12px 16px">
+              <div style="font-size:11px;color:#484f58;font-weight:700;text-transform:uppercase;margin-bottom:4px">Polling interval</div>
+              <div style="font-size:28px;font-weight:800;color:#00d4aa">5s</div>
+            </div>
+            <div style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);border-radius:10px;padding:12px 16px">
+              <div style="font-size:11px;color:#484f58;font-weight:700;text-transform:uppercase;margin-bottom:4px">Delivery time</div>
+              <div style="font-size:28px;font-weight:800;color:#00d4aa">&lt;5s</div>
+            </div>
+            <div style="background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);border-radius:10px;padding:12px 16px">
+              <div style="font-size:11px;color:#484f58;font-weight:700;text-transform:uppercase;margin-bottom:4px">Permissions</div>
+              <div style="font-size:28px;font-weight:800;color:#00d4aa">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:0 0 500px;position:relative">
+        <div class="panel" style="opacity:1;transform:none;width:500px">
+          <div class="ph">
+            <div><div class="ph-sym">^NSEI · NSE India</div><div class="ph-price">24,576.25</div></div>
+            <div class="ph-right"><span class="badge">Market Open</span></div>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn">Chart</button><button class="tab-btn">Stats</button>
+            <button class="tab-btn">News</button><button class="tab-btn active">Alerts</button>
+          </div>
+          <div class="alert-form">
+            <div class="af-lbl">Set Price Alert for ^NSEI</div>
+            <select class="af-sel"><option>Price goes above →</option></select>
+            <div class="af-row">
+              <input class="af-inp" id="alert-inp" value="25,000" readonly />
+              <button class="af-btn">Set Alert</button>
+            </div>
+          </div>
+          <div style="padding:8px 14px;font-size:10px;color:#484f58">Active alerts</div>
+          <div class="alert-active" id="alert-item" style="display:none">
+            <div class="alert-dot"></div>
+            <div class="alert-sym">^NSEI</div>
+            <div class="alert-desc">≥ 25,000.00</div>
+          </div>
+        </div>
+        <!-- Toast -->
+        <div class="toast" id="alert-toast">
+          <div class="toast-lbl">🔔 Price Alert</div>
+          <div class="toast-sym">^NSEI</div>
+          <div class="toast-sub">Went above 25,000.00</div>
+          <div class="toast-price">Now at 25,024.55</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scene 7: More features ── -->
+  <div class="scene bg-grid" id="s7">
+    <div class="center">
+      <div class="fade-up" id="s7-t"><h2>And so much more.</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;max-width:900px">
+        <div class="fade-up delay1" id="f1" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">🌓</div>
+          <div style="font-weight:700;margin-bottom:6px">Light & Dark Theme</div>
+          <div style="font-size:13px;color:#7d8590">Chart labels, tooltips and panels — all theme-aware</div>
+        </div>
+        <div class="fade-up delay2" id="f2" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">⌨️</div>
+          <div style="font-weight:700;margin-bottom:6px">Keyboard Shortcut</div>
+          <div style="font-size:13px;color:#7d8590">⌘+Shift+M on Mac · Alt+M on Windows</div>
+        </div>
+        <div class="fade-up delay3" id="f3" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">📋</div>
+          <div style="font-weight:700;margin-bottom:6px">Copy Chart</div>
+          <div style="font-size:13px;color:#7d8590">Copies chart to clipboard with ticker header baked in</div>
+        </div>
+        <div class="fade-up delay1" id="f4" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">📌</div>
+          <div style="font-weight:700;margin-bottom:6px">Draggable</div>
+          <div style="font-size:13px;color:#7d8590">Drag anywhere. Auto-snaps to corner after 3 seconds</div>
+        </div>
+        <div class="fade-up delay2" id="f5" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">🔄</div>
+          <div style="font-weight:700;margin-bottom:6px">Auto-Refresh</div>
+          <div style="font-size:13px;color:#7d8590">Chart refreshes every 30s + on hover if data is stale</div>
+        </div>
+        <div class="fade-up delay3" id="f6" style="background:#161b22;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px">
+          <div style="font-size:24px;margin-bottom:10px">🔍</div>
+          <div style="font-weight:700;margin-bottom:6px">Auto-detect</div>
+          <div style="font-size:13px;color:#7d8590">Switches ticker on NSE, Binance, Coinbase & more</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scene 8: CTA ── -->
+  <div class="scene bg-glow-green" id="s8">
+    <div class="center">
+      <div class="fade-up" id="s8-t"><div class="tag">Free on Chrome Web Store</div></div>
+      <div class="fade-up delay1" id="s8-title"><h1><span class="green">Stock</span>Peek</h1></div>
+      <div class="fade-up delay2" id="s8-sub"><p class="sub">Peek at any market. No account. No API key.<br>Works on every website.</p></div>
+      <div class="fade-up delay3" id="s8-btn" style="margin-top:36px">
+        <div style="display:inline-flex;align-items:center;gap:10px;background:#4285f4;color:#fff;padding:16px 36px;border-radius:12px;font-size:18px;font-weight:700">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill="white" opacity=".25"/><path d="M7 11l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Add to Chrome — It's Free
+        </div>
+      </div>
+      <div class="fade-up delay4" id="s8-kofi" style="margin-top:20px">
+        <a href='https://ko-fi.com/H2H71YLZOY' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<div class="progress-bar" id="progress"></div>
+<button class="restart" onclick="init()">↺ Replay</button>
+<div id="scene-label" style="position:fixed;top:16px;right:16px;font-size:11px;color:rgba(255,255,255,.2);z-index:1000"></div>
+
+<script>
+// ── Chart drawing ─────────────────────────────────────────────────────────────
+function genData(n, base, vol, drift) {
+  let p = base, d = [];
+  for (let i = 0; i < n; i++) { p += (Math.random() - .5 + drift) * vol; p = Math.max(base*.9, Math.min(base*1.1,p)); d.push(p); }
+  return d;
+}
+const DATA = genData(78, 24372, 28, .02);
+
+function drawChart(canvas, data, progress=1, isGreen=true) {
+  const W=canvas.width/2, H=canvas.height/2, DPR=2;
+  const ctx=canvas.getContext('2d');
+  const l=64,t=10,r=12,b=32,aw=W-l-r,ah=H-t-b;
+  const pts=data.slice(0,Math.max(2,Math.round(data.length*progress)));
+  const pMin=Math.min(...pts),pMax=Math.max(...pts);
+  const sp=pMax-pMin||pMax*.005,lo=pMin-sp*.1,hi=pMax+sp*.1;
+  const xOf=i=>l+(i/(pts.length-1))*aw;
+  const yOf=p=>t+ah*(1-(p-lo)/(hi-lo));
+  const color=isGreen?'#00d4aa':'#ff4757',ra=isGreen?'0,212,170':'255,71,87';
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=t+ah*(i/4);ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(l+aw,y);ctx.stroke();}
+  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.font='10px system-ui,sans-serif';ctx.textAlign='right';
+  for(let i=0;i<=4;i++) ctx.fillText((hi-(hi-lo)*(i/4)).toLocaleString('en-IN',{maximumFractionDigits:0}),l-4,t+ah*(i/4)+3.5);
+  const grad=ctx.createLinearGradient(0,t,0,t+ah);
+  grad.addColorStop(0,`rgba(${ra},.22)`);grad.addColorStop(1,`rgba(${ra},0)`);
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(xOf(i),yOf(p)):ctx.lineTo(xOf(i),yOf(p)));
+  ctx.lineTo(xOf(pts.length-1),t+ah);ctx.lineTo(xOf(0),t+ah);
+  ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();
+  pts.forEach((p,i)=>i===0?ctx.moveTo(xOf(i),yOf(p)):ctx.lineTo(xOf(i),yOf(p)));
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+  // Volume
+  const vols=pts.map((_,i)=>Math.random()*1e8+5e7);
+  const maxV=Math.max(...vols);
+  const vt=t+ah+b+2,vh=20;
+  pts.forEach((p,i)=>{
+    const x=xOf(i),bh=(vols[i]/maxV)*vh;
+    ctx.fillStyle=`rgba(${ra},.3)`;
+    ctx.fillRect(x-1,vt+vh-bh,2,bh);
+  });
+  ctx.fillStyle='rgba(255,255,255,.2)';ctx.textAlign='right';ctx.font='9px system-ui,sans-serif';
+  ctx.fillText('VOL',l-4,vt+9);
+  // X labels
+  const lbls=['09:15','10:45','12:15','13:45','15:30'];
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.textAlign='center';ctx.font='10px system-ui,sans-serif';
+  [0,.25,.5,.75,1].forEach((t2,i)=>{const x=l+t2*aw;ctx.fillText(lbls[i],x,t+ah+18);});
+}
+
+// Animate chart drawing
+function animateChart(canvas, data, dur=2000) {
+  let start=null;
+  function frame(ts) {
+    if(!start) start=ts;
+    const p=Math.min(1,(ts-start)/dur);
+    drawChart(canvas,data,p);
+    if(p<1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── Search animation ──────────────────────────────────────────────────────────
+const SEARCH_RESULTS = [
+  { sym:'AAPL', name:'Apple Inc.', tag:'Equity', cls:'eq' },
+  { sym:'AMZN', name:'Amazon.com Inc.', tag:'Equity', cls:'eq' },
+  { sym:'MSFT', name:'Microsoft Corp.', tag:'Equity', cls:'eq' },
+];
+function renderSearch(query, highlighted=-1) {
+  document.getElementById('search-typed').value = query;
+  const res = document.getElementById('search-res');
+  if (!query) { res.innerHTML=''; return; }
+  res.innerHTML = SEARCH_RESULTS.map((r,i)=>`
+    <div class="sr-item${i===highlighted?' highlight':''}">
+      <span class="sr-sym">${r.sym}</span>
+      <span class="sr-name">${r.name}</span>
+      <span class="sr-tag ${r.cls}">${r.tag}</span>
+    </div>`).join('');
+}
+
+// ── Scene sequencer ───────────────────────────────────────────────────────────
+let timers = [];
+function after(ms, fn) { timers.push(setTimeout(fn, ms)); }
+function clear() { timers.forEach(clearTimeout); timers=[]; }
+
+function fadeIn(el, delay=0) {
+  if (!el) return;
+  after(delay, ()=>{ el.classList.add('in'); });
+}
+
+const TOTAL = 65000; // 65s total
+let progressInterval;
+
+function init() {
+  clear();
+  clearInterval(progressInterval);
+  // Reset all scenes
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.fade-up').forEach(e=>e.classList.remove('in'));
+  document.querySelectorAll('.chip').forEach(e=>e.classList.remove('in'));
+  document.getElementById('main-pill').classList.remove('open');
+  document.getElementById('main-panel').classList.remove('open');
+  document.getElementById('bw-pill').classList.remove('open');
+  document.getElementById('bw-panel') && document.getElementById('bw-panel').classList && document.getElementById('bw-panel').classList.remove('open');
+  document.getElementById('search-ov').classList.remove('visible');
+  document.getElementById('alert-toast').classList.remove('show');
+  document.getElementById('alert-item').style.display='none';
+  document.getElementById('s3-callout').classList.remove('show');
+  document.getElementById('stats-content').style.display='block';
+  document.getElementById('news-content').style.display='none';
+  document.getElementById('tab-stats-s5').classList.add('active');
+  document.getElementById('tab-chart-s5').classList.remove('active');
+  document.getElementById('tab-news-s5').classList.remove('active');
+  renderSearch('');
+
+  // Progress bar
+  const pb = document.getElementById('progress');
+  pb.style.transition='none'; pb.style.width='0';
+  after(100, ()=>{ pb.style.transition=`width ${TOTAL}ms linear`; pb.style.width='100%'; });
+
+  // ── S1: Intro (0-6s) ──
+  after(200, ()=>{ showScene('s1'); fadeIn(document.getElementById('s1-tag')); });
+  after(600, ()=>{ fadeIn(document.getElementById('s1-title')); });
+  after(1100, ()=>{ fadeIn(document.getElementById('s1-sub')); });
+
+  // ── S2: Widget in browser (6-13s) ──
+  after(6000, ()=>{
+    showScene('s2');
+    fadeIn(document.getElementById('s2-t'));
+    fadeIn(document.getElementById('s2-s'), 300);
+    after(1200, ()=>{ document.getElementById('bw-pill').classList.add('open'); });
+  });
+
+  // ── S3: Chart (13-24s) ──
+  after(13000, ()=>{
+    showScene('s3');
+    fadeIn(document.getElementById('s3-t'));
+    fadeIn(document.getElementById('s3-s'), 300);
+    const cv = document.getElementById('main-chart');
+    after(800, ()=>{
+      document.getElementById('main-pill').classList.add('open');
+      after(600, ()=>{
+        document.getElementById('main-panel').classList.add('open');
+        after(300, ()=>animateChart(cv, DATA, 2500));
+      });
+    });
+    after(5000, ()=>{ document.getElementById('s3-callout').classList.add('show'); });
+    after(8000, ()=>{ document.getElementById('s3-callout').classList.remove('show'); });
+  });
+
+  // ── S4: Any ticker (24-35s) ──
+  after(24000, ()=>{
+    showScene('s4');
+    fadeIn(document.getElementById('s4-t'));
+    fadeIn(document.getElementById('s4-s'), 300);
+    const cv2 = document.getElementById('chart2');
+    drawChart(cv2, DATA);
+    const chips=['ch1','ch2','ch3','ch4','ch5','ch6'];
+    chips.forEach((id,i)=>after(800+i*250,()=>document.getElementById(id).classList.add('in')));
+    // Search animation
+    after(3500, ()=>{ document.getElementById('search-ov').classList.add('visible'); renderSearch(''); });
+    after(4000, ()=>{ renderSearch('Ap'); });
+    after(4400, ()=>{ renderSearch('App'); });
+    after(4800, ()=>{ renderSearch('Apple', 0); });
+    after(5800, ()=>{ document.getElementById('search-ov').classList.remove('visible'); });
+  });
+
+  // ── S5: Stats + News (35-47s) ──
+  after(35000, ()=>{
+    showScene('s5');
+    fadeIn(document.getElementById('s5-t'));
+    fadeIn(document.getElementById('s5-s'), 300);
+    // Show stats first
+    after(5000, ()=>{
+      // Switch to news
+      document.getElementById('stats-content').style.display='none';
+      document.getElementById('news-content').style.display='block';
+      document.getElementById('tab-stats-s5').classList.remove('active');
+      document.getElementById('tab-news-s5').classList.add('active');
+    });
+  });
+
+  // ── S6: Alerts (47-57s) ──
+  after(47000, ()=>{
+    showScene('s6');
+    fadeIn(document.getElementById('s6-t'));
+    fadeIn(document.getElementById('s6-s'), 300);
+    fadeIn(document.getElementById('s6-chips'), 500);
+    after(3000, ()=>{
+      document.getElementById('alert-item').style.display='flex';
+      after(1500, ()=>{ document.getElementById('alert-toast').classList.add('show'); });
+      after(4500, ()=>{ document.getElementById('alert-toast').classList.remove('show'); });
+    });
+  });
+
+  // ── S7: More features (57-62s) ──
+  after(57000, ()=>{
+    showScene('s7');
+    fadeIn(document.getElementById('s7-t'));
+    ['f1','f2','f3','f4','f5','f6'].forEach((id,i)=>after(300+i*150,()=>fadeIn(document.getElementById(id))));
+  });
+
+  // ── S8: CTA (62-65s) ──
+  after(62000, ()=>{
+    showScene('s8');
+    fadeIn(document.getElementById('s8-t'));
+    fadeIn(document.getElementById('s8-title'), 200);
+    fadeIn(document.getElementById('s8-sub'), 400);
+    fadeIn(document.getElementById('s8-btn'), 600);
+    fadeIn(document.getElementById('s8-kofi'), 900);
+  });
+
+  // Loop
+  after(TOTAL, ()=>init());
+}
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Kick off
+window.onload = init;
+</script>
+</body>
+</html>

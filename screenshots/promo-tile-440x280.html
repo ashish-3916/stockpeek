@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:440px; height:280px; overflow:hidden; background:#060b14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; color:#e6edf3; }
+
+  .tile {
+    width:440px; height:280px; position:relative; overflow:hidden;
+    background:#060b14;
+    background-image:
+      radial-gradient(ellipse 80% 70% at 75% 55%, rgba(0,212,170,.13) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 50% at 20% 80%, rgba(66,133,244,.07) 0%, transparent 60%);
+  }
+
+  /* Subtle grid */
+  .grid {
+    position:absolute; inset:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:28px 28px;
+  }
+
+  /* Left content */
+  .left {
+    position:absolute; left:28px; top:0; bottom:0;
+    display:flex; flex-direction:column; justify-content:center; gap:0;
+  }
+
+  .logo-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .logo-icon {
+    width:32px; height:32px; border-radius:9px;
+    background:#161b22; border:1px solid rgba(255,255,255,.12);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .logo-name { font-size:17px; font-weight:800; letter-spacing:-.3px; }
+  .logo-name span { color:#00d4aa; }
+
+  h2 {
+    font-size:22px; font-weight:900; letter-spacing:-.8px; line-height:1.15;
+    margin-bottom:10px;
+  }
+  h2 em { color:#00d4aa; font-style:normal; }
+
+  .sub { font-size:11px; color:#7d8590; line-height:1.55; max-width:190px; margin-bottom:16px; }
+
+  .badge {
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(0,212,170,.1); border:1px solid rgba(0,212,170,.28);
+    color:#00d4aa; padding:4px 10px; border-radius:20px;
+    font-size:10px; font-weight:700; letter-spacing:.4px;
+  }
+
+  /* Right: mini widget mockup */
+  .right {
+    position:absolute; right:20px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+  }
+
+  .pill {
+    display:flex; align-items:center; gap:8px;
+    background:#161b22; border:1px solid rgba(255,255,255,.14);
+    border-radius:18px; padding:7px 12px;
+    box-shadow:0 4px 16px rgba(0,0,0,.5);
+  }
+  .p-sym  { color:#7d8590; font-size:9px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; }
+  .p-dot  { width:6px; height:6px; border-radius:50%; background:#00d4aa; box-shadow:0 0 6px rgba(0,212,170,.6); }
+  .p-vals { display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+  .p-price { color:#e6edf3; font-weight:700; font-size:12px; }
+  .p-chg   { font-size:9px; font-weight:700; color:#00d4aa; }
+
+  .panel {
+    width:192px; background:#0d1117;
+    border:1px solid rgba(255,255,255,.1); border-radius:11px;
+    overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.75);
+  }
+  .p-head { padding:9px 10px 7px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .p-h-sym { color:#484f58; font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; margin-bottom:2px; }
+  .p-h-row { display:flex; align-items:baseline; justify-content:space-between; }
+  .p-h-price { color:#e6edf3; font-size:18px; font-weight:800; letter-spacing:-.5px; }
+  .p-h-chg   { font-size:10px; font-weight:700; color:#00d4aa; }
+  .p-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .p-tab { flex:1; padding:5px 2px; border:none; background:none; color:#484f58; font-size:7.5px; font-weight:700; text-transform:uppercase; letter-spacing:.2px; border-bottom:2px solid transparent; }
+  .p-tab.a { color:#e6edf3; border-bottom-color:#00d4aa; }
+  canvas { display:block; }
+  .p-foot { display:flex; gap:2px; padding:5px 8px 7px; }
+  .rb { padding:3px 6px; border-radius:4px; background:rgba(255,255,255,.05); color:#7d8590; font-size:8px; font-weight:700; }
+  .rb.a { background:rgba(0,212,170,.12); color:#00d4aa; }
+</style>
+</head>
+<body>
+<div class="tile">
+  <div class="grid"></div>
+
+  <div class="left">
+    <div class="logo-row">
+      <div class="logo-icon">📊</div>
+      <div class="logo-name"><span>Stock</span>Peek</div>
+    </div>
+    <h2>Live charts,<br><em>instantly.</em></h2>
+    <p class="sub">Hover to peek at any stock, index or crypto — right from your browser corner.</p>
+    <div class="badge">🆓 Free on Chrome</div>
+  </div>
+
+  <div class="right">
+    <div class="pill">
+      <span class="p-sym">NIFTY 50</span>
+      <span class="p-dot"></span>
+      <div class="p-vals">
+        <span class="p-price">24,576.25</span>
+        <span class="p-chg">▲ +0.84%</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="p-head">
+        <div class="p-h-sym">^NSEI · NSE India</div>
+        <div class="p-h-row">
+          <div class="p-h-price">24,576</div>
+          <div class="p-h-chg">+0.84%</div>
+        </div>
+      </div>
+      <div class="p-tabs">
+        <button class="p-tab a">Chart</button>
+        <button class="p-tab">Stats</button>
+        <button class="p-tab">News</button>
+        <button class="p-tab">Alerts</button>
+      </div>
+      <canvas id="cv" width="384" height="168" style="width:192px;height:84px"></canvas>
+      <div class="p-foot">
+        <div class="rb a">1D</div>
+        <div class="rb">1W</div>
+        <div class="rb">1M</div>
+        <div class="rb">6M</div>
+        <div class="rb">1Y</div>
+        <div class="rb">All</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('cv');
+  const W=192, H=84, l=28, t=6, r=4, b=14, aw=W-l-r, ah=H-t-b;
+  const ctx = canvas.getContext('2d');
+  let p=24372, data=[];
+  for(let i=0;i<78;i++){ p+=(Math.random()-.47)*22; data.push(Math.max(24100,Math.min(24900,p))); }
+  const lo=Math.min(...data)-30, hi=Math.max(...data)+30;
+  const xOf=i=>l+(i/(data.length-1))*aw;
+  const yOf=v=>t+ah*(1-(v-lo)/(hi-lo));
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=t+ah*(i/3);ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(l+aw,y);ctx.stroke();}
+  // Y labels
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.font='7px system-ui'; ctx.textAlign='right';
+  for(let i=0;i<=3;i++) ctx.fillText((hi-(hi-lo)*(i/3)).toLocaleString('en-IN',{maximumFractionDigits:0}),l-2,t+ah*(i/3)+2.5);
+  // Area
+  const grad=ctx.createLinearGradient(0,t,0,t+ah);
+  grad.addColorStop(0,'rgba(0,212,170,.22)'); grad.addColorStop(1,'rgba(0,212,170,0)');
+  ctx.beginPath();
+  data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.lineTo(xOf(77),t+ah); ctx.lineTo(xOf(0),t+ah); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  // Line
+  ctx.beginPath();
+  data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.strokeStyle='#00d4aa'; ctx.lineWidth=1.5; ctx.lineJoin='round'; ctx.stroke();
+  // Volume
+  const maxV=1e8;
+  data.forEach((_,i)=>{
+    const v=Math.random()*maxV, x=xOf(i), bh=(v/maxV)*8;
+    ctx.fillStyle='rgba(0,212,170,.25)';
+    ctx.fillRect(x-.8,t+ah+2+8-bh,.8*2,bh);
+  });
+  // X labels
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.textAlign='center'; ctx.font='7px system-ui';
+  ['9:15','11:30','15:30'].forEach((lbl,i)=>ctx.fillText(lbl,l+(i/2)*aw,t+ah+12));
+})();
+</script>
+</body>
+</html>

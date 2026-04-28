@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:1280px; height:800px; overflow:hidden; background:#060b14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; color:#e6edf3; }
+  .wrap { width:1280px; height:800px; display:flex; align-items:center; justify-content:center; gap:80px; padding:0 80px; }
+  /* left */
+  .copy { flex:0 0 420px; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#00d4aa; background:rgba(0,212,170,.1); border:1px solid rgba(0,212,170,.25); padding:5px 14px; border-radius:20px; margin-bottom:20px; }
+  h1 { font-size:50px; font-weight:900; letter-spacing:-2px; line-height:1.1; margin-bottom:16px; }
+  .sub { font-size:17px; color:#7d8590; line-height:1.65; margin-bottom:32px; }
+  .feat { display:flex; flex-direction:column; gap:14px; }
+  .f { display:flex; align-items:flex-start; gap:14px; }
+  .f-icon { font-size:22px; flex:0 0 36px; }
+  .f-title { font-weight:700; margin-bottom:3px; }
+  .f-desc  { font-size:13px; color:#7d8590; }
+  /* right: two panels side by side */
+  .panels { display:flex; gap:20px; align-items:flex-start; }
+  .panel { width:320px; background:#0d1117; border:1px solid rgba(255,255,255,.09); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.7); }
+  .panel.light { background:#ffffff; border-color:rgba(0,0,0,.1); }
+  .ph { display:flex; justify-content:space-between; padding:12px 14px 10px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .panel.light .ph { border-color:rgba(0,0,0,.08); }
+  .ph-sym { color:#484f58; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+  .panel.light .ph-sym { color:#8c959f; }
+  .ph-price { font-size:22px; font-weight:700; color:#e6edf3; }
+  .panel.light .ph-price { color:#1f2328; }
+  .ph-chg { font-size:12px; font-weight:600; color:#00d4aa; margin-top:2px; }
+  .panel.light .ph-chg { color:#1a7f64; }
+  .badge { font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; color:#00d4aa; background:rgba(0,212,170,.12); border:1px solid rgba(0,212,170,.25); text-transform:uppercase; }
+  .panel.light .badge { color:#1a7f64; background:rgba(26,127,100,.1); border-color:rgba(26,127,100,.25); }
+  .tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .panel.light .tabs { border-color:rgba(0,0,0,.08); }
+  .tab { flex:1; padding:7px 3px; border:none; background:none; color:#484f58; font-size:9px; font-weight:700; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .panel.light .tab { color:#8c959f; }
+  .tab.active { color:#e6edf3; border-bottom-color:#00d4aa; }
+  .panel.light .tab.active { color:#1f2328; border-bottom-color:#1a7f64; }
+  canvas { display:block; }
+  .label { text-align:center; padding:8px; font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#484f58; }
+  .panel.light .label { color:#8c959f; background:#f6f8fa; }
+  .toggle-row { display:flex; align-items:center; gap:10px; padding:14px 14px; }
+  .tl { font-size:12px; font-weight:600; }
+  .panel.light .tl { color:#1f2328; }
+  .toggle { width:38px; height:20px; border-radius:10px; position:relative; }
+  .toggle.on { background:#00d4aa; }
+  .toggle.off { background:rgba(255,255,255,.15); }
+  .panel.light .toggle.off { background:rgba(0,0,0,.15); }
+  .toggle::after { content:''; position:absolute; width:14px; height:14px; background:#fff; border-radius:50%; top:3px; transition:left .3s; }
+  .toggle.on::after { left:21px; }
+  .toggle.off::after { left:3px; }
+</style>
+</head>
+<body>
+<div class="wrap" style="background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(210,168,255,.06) 0%, #060b14 65%)">
+  <div class="copy">
+    <div class="tag">✨ Customise It</div>
+    <h1>Your widget,<br>your <span style="color:#00d4aa">way.</span></h1>
+    <p class="sub">Dark or light theme. Full, compact, or mini pill. Drag it anywhere. It remembers everything.</p>
+    <div class="feat">
+      <div class="f">
+        <div class="f-icon">🌓</div>
+        <div><div class="f-title">Light & Dark Theme</div><div class="f-desc">Chart labels, grid and tooltips all adapt automatically</div></div>
+      </div>
+      <div class="f">
+        <div class="f-icon">📌</div>
+        <div><div class="f-title">Draggable anywhere</div><div class="f-desc">Snaps to corner after 3s of inactivity</div></div>
+      </div>
+      <div class="f">
+        <div class="f-icon">⌨️</div>
+        <div><div class="f-title">Keyboard shortcut</div><div class="f-desc">⌘+Shift+M on Mac · Alt+M on Windows</div></div>
+      </div>
+      <div class="f">
+        <div class="f-icon">👁</div>
+        <div><div class="f-title">Full / Compact / Mini</div><div class="f-desc">Right-click the pill to change expanded view</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panels">
+    <!-- Dark panel -->
+    <div>
+      <div class="panel">
+        <div class="ph">
+          <div><div class="ph-sym">^NSEI · NSE India</div><div class="ph-price">24,576.25</div><div class="ph-chg">+0.84%</div></div>
+          <div><span class="badge">Market Open</span></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active">Chart</button><button class="tab">Stats</button>
+          <button class="tab">News</button><button class="tab">Alerts</button>
+        </div>
+        <canvas id="cv-dark" width="640" height="280" style="width:320px;height:140px"></canvas>
+        <div class="toggle-row"><span class="tl">Dark mode</span><div class="toggle on"></div></div>
+      </div>
+      <div class="label">Dark Theme</div>
+    </div>
+    <!-- Light panel -->
+    <div>
+      <div class="panel light">
+        <div class="ph">
+          <div><div class="ph-sym" style="color:#8c959f">^NSEI · NSE India</div><div class="ph-price" style="color:#1f2328">24,576.25</div><div class="ph-chg" style="color:#1a7f64">+0.84%</div></div>
+          <div><span class="badge" style="color:#1a7f64;background:rgba(26,127,100,.1);border-color:rgba(26,127,100,.25)">Market Open</span></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" style="color:#1f2328;border-bottom-color:#1a7f64">Chart</button>
+          <button class="tab" style="color:#8c959f">Stats</button>
+          <button class="tab" style="color:#8c959f">News</button>
+          <button class="tab" style="color:#8c959f">Alerts</button>
+        </div>
+        <canvas id="cv-light" width="640" height="280" style="width:320px;height:140px"></canvas>
+        <div class="toggle-row" style="background:#f6f8fa;border-top:1px solid rgba(0,0,0,.06)"><span class="tl" style="color:#1f2328">Light mode</span><div class="toggle off" style="background:#00d4aa"><style>.toggle.off::after{left:21px}</style></div></div>
+      </div>
+      <div class="label" style="color:#484f58">Light Theme</div>
+    </div>
+  </div>
+</div>
+<script>
+function draw(canvas, light) {
+  const W=320,H=140,l=50,t=8,r=8,b=24,aw=W-l-r,ah=H-t-b;
+  const ctx=canvas.getContext('2d');
+  let p=24372,data=[];
+  for(let i=0;i<60;i++){p+=(Math.random()-.47)*30;data.push(Math.max(24000,Math.min(25000,p)));}
+  const lo=Math.min(...data)-40,hi=Math.max(...data)+40;
+  const xOf=i=>l+(i/(data.length-1))*aw, yOf=v=>t+ah*(1-(v-lo)/(hi-lo));
+  ctx.clearRect(0,0,W,H);
+  if(light){ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);}
+  const gc=light?'rgba(0,0,0,.06)':'rgba(255,255,255,.04)';
+  const lc=light?'rgba(0,0,0,.4)':'rgba(255,255,255,.28)';
+  const col=light?'#1a7f64':'#00d4aa', ra=light?'26,127,100':'0,212,170';
+  ctx.strokeStyle=gc;ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=t+ah*(i/3);ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(l+aw,y);ctx.stroke();}
+  ctx.fillStyle=lc;ctx.font='9px system-ui';ctx.textAlign='right';
+  for(let i=0;i<=3;i++) ctx.fillText((hi-(hi-lo)*(i/3)).toLocaleString('en-IN',{maximumFractionDigits:0}),l-3,t+ah*(i/3)+3);
+  const grad=ctx.createLinearGradient(0,t,0,t+ah);
+  grad.addColorStop(0,`rgba(${ra},.2)`);grad.addColorStop(1,`rgba(${ra},0)`);
+  ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.lineTo(xOf(data.length-1),t+ah);ctx.lineTo(xOf(0),t+ah);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.strokeStyle=col;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+}
+draw(document.getElementById('cv-dark'), false);
+draw(document.getElementById('cv-light'), true);
+</script>
+</body>
+</html>

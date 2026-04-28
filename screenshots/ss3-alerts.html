@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:1280px; height:800px; overflow:hidden; background:#060b14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; color:#e6edf3; }
+  .wrap { width:1280px; height:800px; display:flex; align-items:center; justify-content:center; gap:60px; padding:0 80px;
+    background:radial-gradient(ellipse 60% 60% at 35% 50%, rgba(255,71,87,.07) 0%, #060b14 65%); }
+  .copy { flex:0 0 440px; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#ff4757; background:rgba(255,71,87,.1); border:1px solid rgba(255,71,87,.25); padding:5px 14px; border-radius:20px; margin-bottom:20px; }
+  h1 { font-size:52px; font-weight:900; letter-spacing:-2px; line-height:1.1; margin-bottom:16px; }
+  .sub { font-size:17px; color:#7d8590; line-height:1.65; margin-bottom:28px; }
+  .pill-strip { display:flex; flex-direction:column; gap:10px; }
+  .stat-box { background:rgba(0,212,170,.08); border:1px solid rgba(0,212,170,.2); border-radius:12px; padding:14px 20px; display:flex; align-items:center; gap:14px; }
+  .stat-val { font-size:32px; font-weight:900; color:#00d4aa; }
+  .stat-lbl { font-size:13px; color:#7d8590; }
+  /* Panel */
+  .panel { width:560px; background:#0d1117; border:1px solid rgba(255,255,255,.09); border-radius:16px; overflow:hidden; box-shadow:0 28px 80px rgba(0,0,0,.8); position:relative; }
+  .ph { display:flex; justify-content:space-between; padding:14px 16px 12px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ph-sym { color:#484f58; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .ph-price { color:#e6edf3; font-size:26px; font-weight:700; }
+  .ph-chg { font-size:13px; font-weight:600; color:#00d4aa; margin-top:3px; }
+  .badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; color:#00d4aa; background:rgba(0,212,170,.12); border:1px solid rgba(0,212,170,.25); text-transform:uppercase; }
+  .tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .tab { flex:1; padding:8px 4px; border:none; background:none; color:#484f58; font-size:10px; font-weight:700; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .tab.active { color:#e6edf3; border-bottom-color:#00d4aa; }
+  .af { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .af-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#484f58; margin-bottom:8px; }
+  .af-sel { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#e6edf3; border-radius:6px; padding:7px 10px; font-size:12px; margin-bottom:6px; }
+  .af-row { display:flex; gap:6px; }
+  .af-inp { flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(0,212,170,.4); color:#e6edf3; border-radius:6px; padding:7px 10px; font-size:12px; font-family:inherit; }
+  .af-btn { padding:7px 14px; background:#00d4aa; border:none; color:#0d1117; border-radius:6px; font-weight:700; font-size:12px; }
+  .alert-hint { padding:6px 16px 10px; font-size:10px; color:#484f58; }
+  .alert-item { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .a-dot { width:7px; height:7px; border-radius:50%; background:#00d4aa; flex:0 0 auto; }
+  .a-sym  { font-weight:700; font-size:13px; min-width:70px; }
+  .a-desc { font-size:12px; color:#7d8590; flex:1; }
+  .a-del  { color:#30363d; font-size:16px; }
+  /* Toast */
+  .toast {
+    position:absolute; top:16px; right:16px;
+    background:#161b22; border:1px solid rgba(255,255,255,.1); border-left:3px solid #00d4aa;
+    border-radius:10px; padding:14px 16px; width:240px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+  }
+  .toast-lbl   { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#7d8590; margin-bottom:4px; }
+  .toast-sym   { font-size:15px; font-weight:700; }
+  .toast-sub   { font-size:12px; color:#7d8590; margin-top:2px; }
+  .toast-price { font-size:14px; font-weight:700; color:#00d4aa; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="copy">
+    <div class="tag">🔔 Price Alerts</div>
+    <h1>Know the <span style="color:#00d4aa">moment</span> it moves.</h1>
+    <p class="sub">Direct fetch from Yahoo Finance. No service worker. Toast notification fires in under 5 seconds.</p>
+    <div class="pill-strip">
+      <div class="stat-box"><div class="stat-val">&lt;5s</div><div class="stat-lbl">Alert delivery time<br><span style="font-size:11px;color:#484f58">Direct fetch, no delays</span></div></div>
+      <div class="stat-box"><div class="stat-val">5s</div><div class="stat-lbl">Price check interval<br><span style="font-size:11px;color:#484f58">Always watching</span></div></div>
+      <div class="stat-box" style="border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.03)"><div class="stat-val" style="color:#7d8590">0</div><div class="stat-lbl" style="color:#484f58">Chrome permissions<br><span style="font-size:11px">No notification access needed</span></div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <div><div class="ph-sym">^NSEI · NSE India</div><div class="ph-price">24,576.25</div><div class="ph-chg">+0.84%</div></div>
+      <div><span class="badge">Market Open</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab">Chart</button><button class="tab">Stats</button>
+      <button class="tab">News</button><button class="tab active">Alerts</button>
+    </div>
+    <div class="af">
+      <div class="af-lbl">Set Price Alert for ^NSEI</div>
+      <select class="af-sel"><option>Price goes above →</option></select>
+      <div class="af-row">
+        <input class="af-inp" value="25,000.00" readonly />
+        <button class="af-btn">Set Alert</button>
+      </div>
+    </div>
+    <div class="alert-hint">Active alerts for <strong style="color:#7d8590">^NSEI</strong></div>
+    <div class="alert-item"><div class="a-dot"></div><div class="a-sym">^NSEI</div><div class="a-desc">≥ 25,000.00</div><div class="a-del">×</div></div>
+    <div class="alert-item"><div class="a-dot" style="background:#ff4757"></div><div class="a-sym">AAPL</div><div class="a-desc">≤ 200.00</div><div class="a-del">×</div></div>
+    <!-- Toast overlay -->
+    <div class="toast">
+      <div class="toast-lbl">🔔 Price Alert</div>
+      <div class="toast-sym">^NSEI</div>
+      <div class="toast-sub">Went above 25,000.00</div>
+      <div class="toast-price">Now at 25,024.55</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

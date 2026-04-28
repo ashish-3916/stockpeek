@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:1280px; height:800px; overflow:hidden; background:#060b14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; color:#e6edf3; }
+  .bg { background: radial-gradient(ellipse 80% 60% at 60% 45%, rgba(0,212,170,.1) 0%, #060b14 65%),
+    linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+    background-size:cover,40px 40px,40px 40px; width:1280px; height:800px; position:relative; display:flex; align-items:center; justify-content:space-between; padding:0 80px; gap:60px; }
+  /* Left copy */
+  .copy { flex:0 0 480px; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#00d4aa; background:rgba(0,212,170,.1); border:1px solid rgba(0,212,170,.25); padding:5px 14px; border-radius:20px; margin-bottom:20px; }
+  h1 { font-size:56px; font-weight:900; letter-spacing:-2px; line-height:1.05; margin-bottom:16px; }
+  .green { color:#00d4aa; }
+  .sub { font-size:17px; color:#7d8590; line-height:1.65; margin-bottom:28px; }
+  .stats { display:flex; gap:28px; margin-top:32px; }
+  .stat-val { font-size:24px; font-weight:800; }
+  .stat-lbl { font-size:11px; color:#484f58; margin-top:2px; }
+  /* Widget */
+  .widget { flex:1; display:flex; flex-direction:column; align-items:flex-end; }
+  .pill {
+    display:flex; align-items:center; background:#161b22;
+    border:1px solid rgba(255,255,255,.15); border-radius:22px;
+    height:44px; white-space:nowrap; box-shadow:0 6px 28px rgba(0,0,0,.6);
+    padding:0; overflow:hidden; max-width:300px;
+  }
+  .pill-body { display:flex; align-items:center; gap:10px; padding:0 16px; }
+  .pill-sym { color:#7d8590; font-size:10px; font-weight:700; letter-spacing:.9px; text-transform:uppercase; }
+  .pill-dot { width:7px; height:7px; border-radius:50%; background:#00d4aa; box-shadow:0 0 7px rgba(0,212,170,.6); }
+  .pill-vals { display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto; }
+  .pill-price { color:#e6edf3; font-weight:700; font-size:14px; }
+  .pill-chg   { font-size:11px; font-weight:600; color:#00d4aa; }
+  .panel {
+    width:520px; background:#0d1117; border:1px solid rgba(255,255,255,.09);
+    border-radius:16px; overflow:hidden; box-shadow:0 28px 72px rgba(0,0,0,.8); margin-top:10px;
+  }
+  .ph { display:flex; justify-content:space-between; align-items:flex-start; padding:14px 16px 12px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ph-sym   { color:#484f58; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .ph-price { color:#e6edf3; font-size:26px; font-weight:700; letter-spacing:-.8px; }
+  .ph-chg   { font-size:13px; font-weight:600; color:#00d4aa; margin-top:3px; }
+  .ph-r { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .badge2 { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; color:#00d4aa; background:rgba(0,212,170,.12); border:1px solid rgba(0,212,170,.25); text-transform:uppercase; letter-spacing:.5px; }
+  .upd { font-size:10px; color:#30363d; }
+  .tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .tab { flex:1; padding:8px 4px; border:none; background:none; color:#484f58; font-size:10px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .tab.active { color:#e6edf3; border-bottom-color:#00d4aa; }
+  canvas { display:block; }
+  .chart-foot { display:flex; align-items:center; justify-content:space-between; padding:6px 12px 10px; }
+  .ranges { display:flex; gap:3px; }
+  .rb { padding:4px 9px; border:none; border-radius:5px; background:rgba(255,255,255,.05); color:#7d8590; font-size:10px; font-weight:600; }
+  .rb.active { color:#00d4aa; background:rgba(0,212,170,.12); }
+</style>
+</head>
+<body>
+<div class="bg">
+  <div class="copy">
+    <div class="badge">🟢 Live Market Data</div>
+    <h1>Peek at any stock, <span class="green">instantly.</span></h1>
+    <p class="sub">A floating circle that lives in your browser corner. Hover to expand a live chart for any stock, index, or crypto — without leaving the page.</p>
+    <div class="stats">
+      <div><div class="stat-val green">6+</div><div class="stat-lbl">Time ranges</div></div>
+      <div><div class="stat-val green">&lt;5s</div><div class="stat-lbl">Alert delivery</div></div>
+      <div><div class="stat-val green">0</div><div class="stat-lbl">API keys needed</div></div>
+    </div>
+  </div>
+  <div class="widget">
+    <div class="pill">
+      <div class="pill-body">
+        <span class="pill-sym">NIFTY 50</span>
+        <span class="pill-dot"></span>
+        <div class="pill-vals"><span class="pill-price">24,576.25</span><span class="pill-chg">+0.84%</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <div><div class="ph-sym">^NSEI · NSE India</div><div class="ph-price">24,576.25</div><div class="ph-chg">+204.30 (+0.84%)</div></div>
+        <div class="ph-r"><span class="badge2">Market Open</span><span class="upd">Updated 10:32</span></div>
+      </div>
+      <div class="tabs">
+        <button class="tab active">Chart</button>
+        <button class="tab">Stats</button>
+        <button class="tab">News</button>
+        <button class="tab">Alerts</button>
+      </div>
+      <canvas id="cv" width="1040" height="440" style="width:520px;height:220px"></canvas>
+      <div class="chart-foot">
+        <div class="ranges">
+          <div class="rb active">1D</div><div class="rb">1W</div><div class="rb">1M</div>
+          <div class="rb">6M</div><div class="rb">1Y</div><div class="rb">All</div>
+        </div>
+        <div style="color:#484f58;font-size:10px">📋 Copy chart</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function draw(canvas) {
+  const W=520,H=220,DPR=2,l=64,t=10,r=12,b=32,aw=W-l-r,ah=H-t-b;
+  const ctx=canvas.getContext('2d');
+  let p=24372,data=[];
+  for(let i=0;i<78;i++){p+=(Math.random()-.48)*28;data.push(Math.max(24000,Math.min(25000,p)));}
+  const lo=Math.min(...data)-50,hi=Math.max(...data)+50;
+  const xOf=i=>l+(i/(data.length-1))*aw, yOf=v=>t+ah*(1-(v-lo)/(hi-lo));
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=t+ah*(i/4);ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(l+aw,y);ctx.stroke();}
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.font='10px system-ui';ctx.textAlign='right';
+  for(let i=0;i<=4;i++) ctx.fillText((hi-(hi-lo)*(i/4)).toLocaleString('en-IN',{maximumFractionDigits:0}),l-4,t+ah*(i/4)+4);
+  const grad=ctx.createLinearGradient(0,t,0,t+ah);grad.addColorStop(0,'rgba(0,212,170,.22)');grad.addColorStop(1,'rgba(0,212,170,0)');
+  ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.lineTo(xOf(77),t+ah);ctx.lineTo(xOf(0),t+ah);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.strokeStyle='#00d4aa';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+  ['09:15','10:45','12:15','13:45','15:30'].forEach((lbl,i)=>{
+    ctx.fillStyle='rgba(255,255,255,.28)';ctx.textAlign='center';ctx.font='10px system-ui';
+    ctx.fillText(lbl,l+(i/4)*aw,t+ah+18);
+  });
+}
+draw(document.getElementById('cv'));
+</script>
+</body>
+</html>

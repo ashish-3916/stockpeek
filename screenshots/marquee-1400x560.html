@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { width:1400px; height:560px; overflow:hidden; background:#060b14;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; color:#e6edf3; }
+
+  .tile {
+    width:1400px; height:560px; position:relative; overflow:hidden;
+    background:#060b14;
+  }
+
+  /* Layered glows */
+  .glow1 { position:absolute; width:900px; height:700px; border-radius:50%;
+    background:radial-gradient(circle, rgba(0,212,170,.12) 0%, transparent 70%);
+    right:-100px; top:-100px; pointer-events:none; }
+  .glow2 { position:absolute; width:600px; height:600px; border-radius:50%;
+    background:radial-gradient(circle, rgba(66,133,244,.08) 0%, transparent 70%);
+    left:-50px; bottom:-100px; pointer-events:none; }
+  .glow3 { position:absolute; width:400px; height:400px; border-radius:50%;
+    background:radial-gradient(circle, rgba(0,212,170,.06) 0%, transparent 70%);
+    left:380px; top:80px; pointer-events:none; }
+
+  /* Grid overlay */
+  .grid { position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:40px 40px; }
+
+  /* Left text block */
+  .left {
+    position:absolute; left:80px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; align-items:flex-start;
+    max-width:520px;
+  }
+
+  .eyebrow {
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(0,212,170,.1); border:1px solid rgba(0,212,170,.28);
+    color:#00d4aa; padding:6px 16px; border-radius:30px;
+    font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
+    margin-bottom:28px;
+  }
+  .eyebrow-dot { width:6px; height:6px; border-radius:50%; background:#00d4aa;
+    box-shadow:0 0 8px rgba(0,212,170,.8); animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  h1 {
+    font-size:68px; font-weight:900; letter-spacing:-3px; line-height:1.0;
+    margin-bottom:20px;
+  }
+  h1 .green { color:#00d4aa; }
+  h1 .dim   { color:#484f58; }
+
+  .sub {
+    font-size:18px; color:#7d8590; line-height:1.65; margin-bottom:36px;
+    max-width:460px;
+  }
+
+  .stats { display:flex; gap:40px; margin-bottom:36px; }
+  .stat-val { font-size:30px; font-weight:900; color:#e6edf3; letter-spacing:-1px; }
+  .stat-val span { color:#00d4aa; }
+  .stat-lbl { font-size:11px; color:#484f58; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+
+  .cta {
+    display:inline-flex; align-items:center; gap:10px;
+    background:#4285f4; color:#fff; padding:14px 28px; border-radius:10px;
+    font-size:15px; font-weight:700; letter-spacing:-.2px;
+  }
+  .cta-free { font-size:12px; color:rgba(255,255,255,.6); margin-left:4px; font-weight:500; }
+
+  /* Right widget showcase */
+  .right {
+    position:absolute; right:60px; top:50%; transform:translateY(-50%);
+    display:flex; align-items:flex-start; gap:16px;
+  }
+
+  /* Pill */
+  .pill {
+    display:flex; align-items:center; gap:10px;
+    background:#161b22; border:1px solid rgba(255,255,255,.15);
+    border-radius:24px; padding:10px 18px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+    white-space:nowrap;
+  }
+  .p-sym  { color:#7d8590; font-size:11px; font-weight:700; letter-spacing:.9px; text-transform:uppercase; }
+  .p-dot  { width:8px; height:8px; border-radius:50%; background:#00d4aa; box-shadow:0 0 8px rgba(0,212,170,.7); }
+  .p-price { color:#e6edf3; font-weight:700; font-size:16px; }
+  .p-chg   { font-size:12px; font-weight:700; color:#00d4aa; }
+
+  /* Main panel */
+  .panel {
+    width:380px; background:#0d1117;
+    border:1px solid rgba(255,255,255,.1); border-radius:16px; overflow:hidden;
+    box-shadow:0 32px 80px rgba(0,0,0,.85);
+  }
+  .ph { display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px 12px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .ph-sym   { color:#484f58; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .ph-price { color:#e6edf3; font-size:30px; font-weight:800; letter-spacing:-1px; }
+  .ph-chg   { font-size:14px; font-weight:600; color:#00d4aa; margin-top:4px; }
+  .ph-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .badge    { font-size:10px; font-weight:700; padding:4px 10px; border-radius:20px; color:#00d4aa; background:rgba(0,212,170,.12); border:1px solid rgba(0,212,170,.25); text-transform:uppercase; letter-spacing:.5px; }
+  .upd      { font-size:10px; color:#30363d; }
+
+  .tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .tab  { flex:1; padding:9px 4px; border:none; background:none; color:#484f58; font-size:10px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .tab.active { color:#e6edf3; border-bottom-color:#00d4aa; }
+
+  canvas { display:block; }
+
+  .chart-foot { display:flex; align-items:center; justify-content:space-between; padding:6px 12px 10px; }
+  .ranges { display:flex; gap:3px; }
+  .rb { padding:4px 9px; border-radius:5px; background:rgba(255,255,255,.05); color:#7d8590; font-size:10px; font-weight:700; }
+  .rb.active { color:#00d4aa; background:rgba(0,212,170,.12); }
+
+  /* Side mini panel */
+  .mini-panel {
+    width:190px; background:#0d1117;
+    border:1px solid rgba(255,255,255,.09); border-radius:12px; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.7);
+    margin-top:60px;
+  }
+  .mp-head { padding:10px 12px 8px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .mp-sym   { color:#484f58; font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+  .mp-price { color:#e6edf3; font-size:18px; font-weight:800; letter-spacing:-.5px; }
+  .mp-chg   { font-size:11px; font-weight:600; color:#ff4757; margin-top:2px; }
+  .mp-tabs  { display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
+  .mp-tab   { flex:1; padding:5px 2px; border:none; background:none; color:#484f58; font-size:8px; font-weight:700; text-transform:uppercase; border-bottom:2px solid transparent; }
+  .mp-tab.active { color:#e6edf3; border-bottom-color:#ff4757; }
+  .mp-foot { display:flex; gap:2px; padding:5px 8px 8px; }
+  .mrb { padding:3px 6px; border-radius:4px; background:rgba(255,255,255,.05); color:#7d8590; font-size:8px; font-weight:700; }
+  .mrb.active { color:#ff4757; background:rgba(255,71,87,.12); }
+
+  /* Toast */
+  .toast {
+    position:absolute; bottom:36px; right:76px;
+    background:#161b22; border:1px solid rgba(255,255,255,.1);
+    border-left:3px solid #00d4aa; border-radius:10px;
+    padding:12px 16px; width:220px;
+    box-shadow:0 8px 32px rgba(0,0,0,.6);
+  }
+  .toast-lbl   { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#7d8590; margin-bottom:3px; }
+  .toast-sym   { font-size:14px; font-weight:700; }
+  .toast-sub   { font-size:11px; color:#7d8590; margin-top:2px; }
+  .toast-price { font-size:13px; font-weight:700; color:#00d4aa; margin-top:5px; }
+
+  /* Floating circle */
+  .circle {
+    position:absolute; top:44px; right:468px;
+    width:44px; height:44px; border-radius:50%;
+    background:#161b22; border:2px solid rgba(0,212,170,.6);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:800; color:#00d4aa;
+    box-shadow:0 4px 20px rgba(0,212,170,.25);
+  }
+
+  /* Bottom feature strip */
+  .features {
+    position:absolute; bottom:0; left:0; right:0;
+    border-top:1px solid rgba(255,255,255,.06);
+    background:rgba(13,17,23,.6); backdrop-filter:blur(8px);
+    display:flex; align-items:center; justify-content:center; gap:0;
+    height:52px;
+  }
+  .feat {
+    display:flex; align-items:center; gap:8px; padding:0 32px;
+    border-right:1px solid rgba(255,255,255,.06); font-size:12px; font-weight:600; color:#7d8590;
+  }
+  .feat:last-child { border-right:none; }
+  .feat-icon { font-size:15px; }
+  .feat em { color:#e6edf3; font-style:normal; }
+</style>
+</head>
+<body>
+<div class="tile">
+  <div class="glow1"></div>
+  <div class="glow2"></div>
+  <div class="glow3"></div>
+  <div class="grid"></div>
+
+  <!-- Left -->
+  <div class="left">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>Free Chrome Extension</div>
+    <h1>
+      Peek at markets.<br>
+      <span class="green">Instantly.</span><br>
+      <span class="dim">Effortlessly.</span>
+    </h1>
+    <p class="sub">A floating circle that lives in your browser corner. Hover to see live charts for any stock, index, or crypto — without leaving the page.</p>
+    <div class="stats">
+      <div>
+        <div class="stat-val"><span>&lt;</span>5s</div>
+        <div class="stat-lbl">Alert delivery</div>
+      </div>
+      <div>
+        <div class="stat-val">6<span>+</span></div>
+        <div class="stat-lbl">Time ranges</div>
+      </div>
+      <div>
+        <div class="stat-val">0</div>
+        <div class="stat-lbl">API keys needed</div>
+      </div>
+    </div>
+    <div class="cta">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" fill="white" opacity=".25"/><path d="M5 9l3 3 5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Add to Chrome
+      <span class="cta-free">— It's Free</span>
+    </div>
+  </div>
+
+  <!-- Floating circle pill indicator -->
+  <div class="circle">▲</div>
+
+  <!-- Right widgets -->
+  <div class="right">
+    <!-- Mini panel (S&P 500, red) -->
+    <div class="mini-panel">
+      <div class="mp-head">
+        <div class="mp-sym">^GSPC · S&P 500</div>
+        <div class="mp-price">5,282.10</div>
+        <div class="mp-chg">−0.31%</div>
+      </div>
+      <div class="mp-tabs">
+        <button class="mp-tab active">Chart</button>
+        <button class="mp-tab">Stats</button>
+        <button class="mp-tab">News</button>
+        <button class="mp-tab">Alerts</button>
+      </div>
+      <canvas id="cv-mini" width="380" height="200" style="width:190px;height:100px"></canvas>
+      <div class="mp-foot">
+        <div class="mrb active">1D</div>
+        <div class="mrb">1W</div><div class="mrb">1M</div><div class="mrb">6M</div><div class="mrb">1Y</div>
+      </div>
+    </div>
+
+    <!-- Main panel (Nifty, green) -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="pill">
+        <span class="p-sym">NIFTY 50</span>
+        <span class="p-dot"></span>
+        <span class="p-price">24,576.25</span>
+        <span class="p-chg">▲ +0.84%</span>
+      </div>
+      <div class="panel">
+        <div class="ph">
+          <div>
+            <div class="ph-sym">^NSEI · NSE India</div>
+            <div class="ph-price">24,576.25</div>
+            <div class="ph-chg">+204.30 (+0.84%)</div>
+          </div>
+          <div class="ph-right">
+            <span class="badge">Market Open</span>
+            <span class="upd">Updated 10:32</span>
+          </div>
+        </div>
+        <div class="tabs">
+          <button class="tab active">Chart</button>
+          <button class="tab">Stats</button>
+          <button class="tab">News</button>
+          <button class="tab">Alerts</button>
+        </div>
+        <canvas id="cv-main" width="760" height="380" style="width:380px;height:190px"></canvas>
+        <div class="chart-foot">
+          <div class="ranges">
+            <div class="rb active">1D</div><div class="rb">1W</div><div class="rb">1M</div>
+            <div class="rb">6M</div><div class="rb">1Y</div><div class="rb">All</div>
+          </div>
+          <div style="color:#484f58;font-size:10px">📋 Copy chart</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast">
+    <div class="toast-lbl">🔔 Price Alert</div>
+    <div class="toast-sym">^NSEI</div>
+    <div class="toast-sub">Went above 25,000.00</div>
+    <div class="toast-price">Now at 25,024.55</div>
+  </div>
+
+  <!-- Feature strip -->
+  <div class="features">
+    <div class="feat"><span class="feat-icon">📊</span>Live Charts — <em>1D to All Time</em></div>
+    <div class="feat"><span class="feat-icon">🔔</span>Price Alerts — <em>&lt;5s delivery</em></div>
+    <div class="feat"><span class="feat-icon">🔍</span>Any Ticker — <em>Stocks, Crypto, ETFs</em></div>
+    <div class="feat"><span class="feat-icon">📰</span>Stats &amp; News — <em>Always fresh</em></div>
+    <div class="feat"><span class="feat-icon">🌓</span>Light &amp; Dark — <em>Theme aware</em></div>
+    <div class="feat"><span class="feat-icon">⌨️</span>Keyboard Shortcut — <em>⌘ Shift M</em></div>
+  </div>
+</div>
+
+<script>
+function drawChart(canvas, opts) {
+  const { W, H, isGreen, points } = opts;
+  const l=48, t=8, r=6, b=18, aw=W-l-r, ah=H-t-b;
+  const ctx = canvas.getContext('2d');
+  let p = isGreen ? 24372 : 5310, data = [];
+  for(let i=0;i<points;i++){
+    p += (Math.random() - (isGreen ? .47 : .53)) * (isGreen ? 25 : 4);
+    data.push(Math.max(isGreen?24100:5200, Math.min(isGreen?24900:5330, p)));
+  }
+  const lo=Math.min(...data)-(isGreen?30:3), hi=Math.max(...data)+(isGreen?30:3);
+  const xOf=i=>l+(i/(data.length-1))*aw, yOf=v=>t+ah*(1-(v-lo)/(hi-lo));
+  const color=isGreen?'#00d4aa':'#ff4757', ra=isGreen?'0,212,170':'255,71,87';
+
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=t+ah*(i/3);ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(l+aw,y);ctx.stroke();}
+
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.font=`${isGreen?9:8}px system-ui`; ctx.textAlign='right';
+  for(let i=0;i<=3;i++) ctx.fillText(
+    (hi-(hi-lo)*(i/3)).toLocaleString('en-IN',{maximumFractionDigits:isGreen?0:0}),
+    l-3, t+ah*(i/3)+3
+  );
+
+  const grad=ctx.createLinearGradient(0,t,0,t+ah);
+  grad.addColorStop(0,`rgba(${ra},.22)`); grad.addColorStop(1,`rgba(${ra},0)`);
+  ctx.beginPath();
+  data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.lineTo(xOf(data.length-1),t+ah); ctx.lineTo(xOf(0),t+ah);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  ctx.beginPath();
+  data.forEach((v,i)=>i?ctx.lineTo(xOf(i),yOf(v)):ctx.moveTo(xOf(i),yOf(v)));
+  ctx.strokeStyle=color; ctx.lineWidth=isGreen?2:1.5; ctx.lineJoin='round'; ctx.stroke();
+
+  // Volume bars
+  const maxV=1e8;
+  data.forEach((_,i)=>{
+    const v=Math.random()*maxV, x=xOf(i), bh=(v/maxV)*(isGreen?12:8);
+    ctx.fillStyle=`rgba(${ra},.28)`; ctx.fillRect(x-.8,t+ah+2+bh-bh,.8*2,bh);
+  });
+
+  // X labels
+  const xlbls=isGreen?['9:15','11:30','13:30','15:30']:['9:30','11:30','13:30','15:30'];
+  ctx.fillStyle='rgba(255,255,255,.22)'; ctx.textAlign='center'; ctx.font='8px system-ui';
+  xlbls.forEach((lbl,i)=>ctx.fillText(lbl, l+(i/(xlbls.length-1))*aw, t+ah+13));
+}
+
+drawChart(document.getElementById('cv-main'), { W:380, H:190, isGreen:true,  points:78 });
+drawChart(document.getElementById('cv-mini'), { W:190, H:100, isGreen:false, points:60 });
+</script>
+</body>
+</html>
