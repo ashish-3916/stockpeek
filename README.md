@@ -5,6 +5,7 @@ A floating stock ticker for any Yahoo Finance symbol. Lives as a small circle in
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
 ![No API Key](https://img.shields.io/badge/API%20Key-Not%20Required-brightgreen)
+[![Website](https://img.shields.io/badge/Website-ashish--3916.github.io/stockpeek-00d4aa)](https://ashish-3916.github.io/stockpeek/)
 
 <a href='https://ko-fi.com/H2H71YLZOY' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
