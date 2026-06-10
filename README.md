@@ -2,7 +2,7 @@
 
 A floating stock ticker for any Yahoo Finance symbol. Lives as a small circle in the corner of every page, expands on hover to show a live price chart.
 
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
+![Chrome Extension](https://chromewebstore.google.com/detail/stockpeek/nijkpaiobpnelmbinnpiaakpiphpdgbe)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
 ![No API Key](https://img.shields.io/badge/API%20Key-Not%20Required-brightgreen)
 [![Website](https://img.shields.io/badge/Website-ashish--3916.github.io/stockpeek-00d4aa)](https://ashish-3916.github.io/stockpeek/)
